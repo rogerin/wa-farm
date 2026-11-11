@@ -1,0 +1,32 @@
+{
+  "name": "wa-android-farm",
+  "version": "1.0.0",
+  "description": "Ultra-Low-RAM Android Emulator Farm for Multi-Account WhatsApp Integration (~850 MB RAM per instance)",
+  "scripts": {
+    "wa": "bash ./wa-farm.sh",
+    "wa:setup": "bash ./wa-farm.sh setup",
+    "wa:create": "bash ./wa-farm.sh create all",
+    "wa:status": "bash ./wa-farm.sh status",
+    "wa:stop-all": "bash ./wa-farm.sh stop all",
+    "wa:heartbeat": "bash ./wa-farm.sh heartbeat",
+    "test": "bash -n ./wa-farm.sh && ./wa-farm.sh --version && ./wa-farm.sh --help >/dev/null"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rogerin/wa-android-farm.git"
+  },
+  "keywords": [
+    "whatsapp",
+    "android-emulator",
+    "low-memory",
+    "adb",
+    "automation",
+    "evolution-api",
+    "baileys",
+    "waha",
+    "apple-silicon",
+    "keycore"
+  ],
+  "author": "Rogério Alencar Filho (@rogerin) <https://keycore.com.br>",
+  "license": "MIT"
+}

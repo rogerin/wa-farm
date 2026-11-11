@@ -1,0 +1,29 @@
+name: CI — Validate wa-farm CLI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Bash syntax
+        run: bash -n ./wa-farm.sh
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: '.'
+
+      - name: Verify CLI commands (--version, --help, status)
+        run: |
+          chmod +x ./wa-farm.sh
+          ./wa-farm.sh --version
+          ./wa-farm.sh --help
+          ./wa-farm.sh status

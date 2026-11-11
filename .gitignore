@@ -1,0 +1,16 @@
+# Ambiente e credenciais locais
+.env
+.env.*
+!.env.example
+
+# APKs baixados e imagens temporárias de QR Code
+apk/*.apk
+*.apk
+*.png
+*.jpg
+*.jpeg
+
+# Logs e arquivos de sistema
+*.log
+.DS_Store
+node_modules/
