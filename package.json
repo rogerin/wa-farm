@@ -7,7 +7,9 @@
     "wa": "bash ./wa-farm.sh",
     "wa:setup": "bash ./wa-farm.sh setup",
     "wa:create": "bash ./wa-farm.sh create all",
-    "wa:status": "bash ./wa-farm.sh status",
+    "wa:list": "bash ./wa-farm.sh list",
+    "wa:status": "bash ./wa-farm.sh list",
+    "wa:show": "bash ./wa-farm.sh show",
     "wa:stop-all": "bash ./wa-farm.sh stop all",
     "wa:heartbeat": "bash ./wa-farm.sh heartbeat",
     "test": "bash -n ./wa-farm.sh && ./wa-farm.sh --version && ./wa-farm.sh --help >/dev/null"

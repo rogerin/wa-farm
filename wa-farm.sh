@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# wa-farm (wa-farm.sh) — v1.0.0
+# wa-farm (wa-farm.sh) — v1.1.0
 # Ultra-Low-RAM Android Emulator Farm for Multi-Account WhatsApp Integration
 # Author: Rogério Alencar Filho (@rogerin) — KeyCore Open Source
 # License: MIT
 # ==============================================================================
 set -euo pipefail
 
-VERSION="1.0.0"
+VERSION="1.1.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Carrega .env local se existir
@@ -84,6 +84,27 @@ avd_serial() {
   echo "emulator-$(avd_port "$1")"
 }
 
+find_avd_pid() {
+  local name="$1"
+  ps aux | grep -E "[q]emu-system-.*-avd ${name}([[:space:]]|$)" | awk '{print $2}' | head -n 1 || true
+}
+
+is_avd_headless() {
+  local name="$1"
+  ps aux | grep -E "[q]emu-system-.*-avd ${name}([[:space:]]|$)" | grep -q -- "-no-window"
+}
+
+focus_emulator_window() {
+  local idx="$1"
+  local name
+  name="$(avd_name "$idx")"
+  local pid
+  pid="$(find_avd_pid "$name")"
+  if [[ -n "$pid" ]] && [[ "$(uname -s)" == "Darwin" ]]; then
+    osascript -e "tell application \"System Events\" to set frontmost of (every process whose unix id is ${pid}) to true" >/dev/null 2>&1 || true
+  fi
+}
+
 log_info() {
   printf "\033[1;36m[wa-farm]\033[0m %s\n" "$*"
 }
@@ -103,7 +124,7 @@ log_err() {
 require_sdk_tools() {
   if [[ ! -x "$SDKMANAGER_BIN" ]] && ! command -v sdkmanager >/dev/null 2>&1; then
     log_err "Ferramenta 'sdkmanager' não encontrada."
-    log_info "No macOS, instale com: brew install --cask android-commandlinetools android-platform-tools"
+    log_info "No macOS, instale com: brew install --cask temurin android-commandlinetools android-platform-tools"
     log_info "No Ubuntu/Debian, instale: sudo apt install android-sdk-platform-tools && sdkmanager"
     exit 1
   fi
@@ -175,9 +196,6 @@ hw.camera.front=none
 hw.cpu.arch=${CPU_ARCH}
 hw.cpu.ncore=${CPU_CORES}
 hw.dPad=no
-hw.device.hash2=MD5:55acbc835978f326788ed66a5cd4c9a7
-hw.device.manufacturer=Generic
-hw.device.name=pixel
 hw.gps=no
 hw.gpu.enabled=yes
 hw.gpu.mode=auto
@@ -221,7 +239,7 @@ cmd_create() {
 }
 
 # ------------------------------------------------------------------------------
-# 3. START: Inicia 1 ou todos os emuladores com flags de ultra-economia de RAM
+# 3. START: Inicia 1 ou todos os emuladores (Background Daemon ou --foreground)
 # ------------------------------------------------------------------------------
 start_single_avd() {
   local idx="$1"
@@ -237,12 +255,21 @@ start_single_avd() {
   local headless_flags=()
   local camera_back="virtualscene"
   local gpu_mode="swiftshader_indirect"
+  local run_foreground="false"
+  local force_gui="false"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --headless)
         headless_flags=("-no-window")
         gpu_mode="off"
+        ;;
+      --foreground|--fg|--attach)
+        run_foreground="true"
+        force_gui="true"
+        ;;
+      --gui|--show|--window)
+        force_gui="true"
         ;;
       --webcam)
         camera_back="webcam0"
@@ -261,35 +288,67 @@ start_single_avd() {
     cmd_setup
   fi
 
-  if "$ADB_BIN" devices 2>/dev/null | grep -q "^${serial}[[:space:]]"; then
-    log_ok "${name} já está rodando em ${serial} (porta ${port})."
-    return 0
+  # Verifica se já está rodando
+  local existing_pid
+  existing_pid="$(find_avd_pid "$name")"
+  if [[ -n "$existing_pid" ]]; then
+    if [[ "$force_gui" == "true" ]] && is_avd_headless "$name"; then
+      log_info "${name} estava em modo headless (-no-window). Reiniciando com janela visível..."
+      stop_single_avd "$idx"
+      sleep 2
+    else
+      log_ok "${name} já está rodando em ${serial} (PID: ${existing_pid}). Trazendo janela para frente..."
+      focus_emulator_window "$idx"
+      return 0
+    fi
   fi
 
   local log_file="/tmp/${name}_emulator.log"
+  rm -f "$log_file"
+
+  local emu_cmd=(
+    "$EMULATOR_BIN"
+    -avd "$name"
+    -port "$port"
+    -memory "$RAM_MB"
+    -cores "$CPU_CORES"
+    -no-boot-anim
+    -no-audio
+    -no-snapshot
+    -no-snapshot-save
+    -no-snapstorage
+    -camera-back "$camera_back"
+    -camera-front none
+    -gpu "$gpu_mode"
+    -netdelay none
+    -netspeed full
+    ${headless_flags[@]+"${headless_flags[@]}"}
+  )
+
+  if [[ "$run_foreground" == "true" ]]; then
+    log_info "Iniciando ${name} em FOREGROUND (${serial} | Janela Visível | Pressione Ctrl+C para fechar)..."
+    "${emu_cmd[@]}"
+    return 0
+  fi
+
   log_info "Iniciando ${name} em ${serial} (RAM máx: ${RAM_MB} MB | Câmera: ${camera_back} | GPU: ${gpu_mode})..."
 
-  nohup "$EMULATOR_BIN" \
-    -avd "$name" \
-    -port "$port" \
-    -memory "$RAM_MB" \
-    -cores "$CPU_CORES" \
-    -no-boot-anim \
-    -no-audio \
-    -no-snapshot \
-    -no-snapshot-save \
-    -no-snapstorage \
-    -camera-back "$camera_back" \
-    -camera-front none \
-    -gpu "$gpu_mode" \
-    -netdelay none \
-    -netspeed full \
-    ${headless_flags[@]+"${headless_flags[@]}"} \
-    </dev/null >"$log_file" 2>&1 &
+  # Inicia em nova sessão independente (start_new_session=True) para não morrer ao fechar o terminal
+  python3 -c '
+import subprocess, sys
+log = open(sys.argv[1], "wb")
+p = subprocess.Popen(sys.argv[2:], stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+print(p.pid)
+' "$log_file" "${emu_cmd[@]}" > "/tmp/${name}.pid"
 
-  local emu_pid=$!
-  disown "$emu_pid" 2>/dev/null || true
-  log_ok "${name} iniciado em background (PID: ${emu_pid} | Log: ${log_file})."
+  local emu_pid
+  emu_pid="$(cat "/tmp/${name}.pid")"
+  log_ok "${name} iniciado (PID: ${emu_pid} | Log: ${log_file})."
+
+  if [[ ${#headless_flags[@]} -eq 0 ]]; then
+    sleep 2
+    focus_emulator_window "$idx"
+  fi
 }
 
 cmd_start() {
@@ -306,7 +365,28 @@ cmd_start() {
 }
 
 # ------------------------------------------------------------------------------
-# 4. WAIT + DEBLOAT + INSTALL-WA: Otimiza Android e instala o WhatsApp.apk
+# 4. SHOW: Sai do background/headless e mostra a janela do emulador na frente
+# ------------------------------------------------------------------------------
+cmd_show() {
+  local idx="${1:-1}"
+  shift || true
+  local name
+  name="$(avd_name "$idx")"
+  local serial
+  serial="$(avd_serial "$idx")"
+
+  start_single_avd "$idx" --gui "$@"
+  wait_for_boot "$serial"
+  # Acorda a tela e abre o WhatsApp na frente do usuário
+  "$ADB_BIN" -s "$serial" shell input keyevent 224 >/dev/null 2>&1 || true
+  "$ADB_BIN" -s "$serial" shell input keyevent 82 >/dev/null 2>&1 || true
+  "$ADB_BIN" -s "$serial" shell monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+  focus_emulator_window "$idx"
+  log_ok "Janela do emulador ${name} (${serial}) aberta e trazida para o primeiro plano!"
+}
+
+# ------------------------------------------------------------------------------
+# 5. WAIT + DEBLOAT + INSTALL-WA: Otimiza Android e instala o WhatsApp.apk
 # ------------------------------------------------------------------------------
 wait_for_boot() {
   local serial="$1"
@@ -376,8 +456,12 @@ install_wa_single() {
   wait_for_boot "$serial"
   debloat_android "$serial"
 
-  log_info "Instalando WhatsApp oficial em $(avd_name "$idx") (${serial})..."
-  "$ADB_BIN" -s "$serial" install -r "$WHATSAPP_APK"
+  if ! "$ADB_BIN" -s "$serial" shell pm list packages 2>/dev/null | grep -q "package:com.whatsapp$"; then
+    log_info "Instalando WhatsApp oficial em $(avd_name "$idx") (${serial})..."
+    "$ADB_BIN" -s "$serial" install -r "$WHATSAPP_APK"
+  else
+    log_ok "WhatsApp já está instalado em $(avd_name "$idx") (${serial})."
+  fi
 
   # Concede permissões de câmera e armazenamento antecipadamente para leitura do QR Code
   "$ADB_BIN" -s "$serial" shell pm grant com.whatsapp android.permission.CAMERA >/dev/null 2>&1 || true
@@ -386,6 +470,7 @@ install_wa_single() {
 
   log_info "Abrindo o WhatsApp na tela de $(avd_name "$idx")..."
   "$ADB_BIN" -s "$serial" shell monkey -p com.whatsapp -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
+  focus_emulator_window "$idx"
   log_ok "WhatsApp instalado e aberto em $(avd_name "$idx") (${serial})!"
 }
 
@@ -401,7 +486,7 @@ cmd_install_wa() {
 }
 
 # ------------------------------------------------------------------------------
-# 5. BOOTSTRAP: Faz tudo em 1 único comando (Cria -> Abre -> Otimiza -> Instala WA)
+# 6. BOOTSTRAP: Faz tudo em 1 único comando (Cria -> Abre -> Otimiza -> Instala WA)
 # ------------------------------------------------------------------------------
 cmd_bootstrap() {
   local idx="${1:-1}"
@@ -414,12 +499,12 @@ cmd_bootstrap() {
   if [[ ! -d "${ANDROID_AVD_HOME}/${name}.avd" ]]; then
     create_single_avd "$idx"
   fi
-  start_single_avd "$idx" "$@"
+  start_single_avd "$idx" --gui "$@"
   install_wa_single "$idx"
 }
 
 # ------------------------------------------------------------------------------
-# 6. QR CODE & PAIRING CODE: Injeção de QR Code na Câmera Virtual ou Código 8d
+# 7. QR CODE & PAIRING CODE: Injeção de QR Code na Câmera Virtual ou Código 8d
 # ------------------------------------------------------------------------------
 cmd_qr() {
   local idx="${1:?Informe o número da conta (1 a ${MAX_ACCOUNTS})}"
@@ -470,11 +555,11 @@ cmd_pair() {
 }
 
 # ------------------------------------------------------------------------------
-# 7. STATUS & CONSUMO REAL DE MEMÓRIA RAM
+# 8. LIST / STATUS: Tabela das Contas, Modo (Janela/Headless) e Consumo Total RAM
 # ------------------------------------------------------------------------------
 cmd_status() {
-  printf "\n%-8s | %-10s | %-15s | %-10s | %-8s | %-12s\n" "CONTA" "AVD" "SERIAL ADB" "CRIADO?" "STATUS" "RAM (MB)"
-  printf "%s\n" "---------+------------+-----------------+------------+----------+-------------"
+  printf "\n%-8s | %-8s | %-14s | %-7s | %-8s | %-10s | %-7s | %-10s\n" "CONTA" "AVD" "SERIAL ADB" "CRIADO?" "STATUS" "MODO" "PID" "RAM (MB)"
+  printf "%s\n" "---------+----------+----------------+---------+----------+------------+---------+-----------"
 
   local total_ram_mb=0
   local running_count=0
@@ -488,12 +573,20 @@ cmd_status() {
     [[ -d "${ANDROID_AVD_HOME}/${name}.avd" ]] && created="SIM"
 
     local status="PARADO"
+    local mode="-"
+    local pid_str="-"
     local ram_mb="0 MB"
 
     local found_pid
-    found_pid="$(ps aux | grep -E "[q]emu-system-.*-avd ${name}([[:space:]]|$)" | awk '{print $2}' | head -n 1 || true)"
+    found_pid="$(find_avd_pid "$name")"
     if [[ -n "$found_pid" ]]; then
       status="RODANDO"
+      pid_str="$found_pid"
+      if is_avd_headless "$name"; then
+        mode="HEADLESS"
+      else
+        mode="JANELA GUI"
+      fi
       local rss_kb
       rss_kb="$(ps -o rss= -p "$found_pid" 2>/dev/null | awk '{print $1}' || echo 0)"
       local mb=$(( rss_kb / 1024 ))
@@ -502,15 +595,17 @@ cmd_status() {
       running_count=$(( running_count + 1 ))
     fi
 
-    printf "Conta #%d | %-10s | %-15s | %-10s | %-8s | %-12s\n" "$i" "$name" "$serial" "$created" "$status" "$ram_mb"
+    printf "Conta #%d | %-8s | %-14s | %-7s | %-8s | %-10s | %-7s | %-10s\n" "$i" "$name" "$serial" "$created" "$status" "$mode" "$pid_str" "$ram_mb"
   done
 
-  printf "%s\n" "---------+------------+-----------------+------------+----------+-------------"
-  printf "Total em execução: %d/%d emuladores | Consumo total de RAM: %d MB\n\n" "$running_count" "$MAX_ACCOUNTS" "$total_ram_mb"
+  local total_gb
+  total_gb="$(awk "BEGIN {printf \"%.2f\", ${total_ram_mb}/1024}")"
+  printf "%s\n" "---------+----------+----------------+---------+----------+------------+---------+-----------"
+  printf "Total em execução: %d/%d emuladores | Consumo total de RAM: %d MB (%s GB)\n\n" "$running_count" "$MAX_ACCOUNTS" "$total_ram_mb" "$total_gb"
 }
 
 # ------------------------------------------------------------------------------
-# 8. STOP & HEARTBEAT (Renovação das Contas de 14 em 14 dias com <1GB RAM)
+# 9. STOP & HEARTBEAT (Renovação das Contas de 14 em 14 dias com <1GB RAM)
 # ------------------------------------------------------------------------------
 stop_single_avd() {
   local idx="$1"
@@ -519,9 +614,15 @@ stop_single_avd() {
   local name
   name="$(avd_name "$idx")"
 
-  if "$ADB_BIN" devices 2>/dev/null | grep -q "^${serial}[[:space:]]"; then
+  local found_pid
+  found_pid="$(find_avd_pid "$name")"
+  if "$ADB_BIN" devices 2>/dev/null | grep -q "^${serial}[[:space:]]" || [[ -n "$found_pid" ]]; then
     log_info "Desligando ${name} (${serial})..."
     "$ADB_BIN" -s "$serial" emu kill >/dev/null 2>&1 || true
+    sleep 1
+    if [[ -n "$found_pid" ]] && kill -0 "$found_pid" 2>/dev/null; then
+      kill "$found_pid" >/dev/null 2>&1 || true
+    fi
     log_ok "${name} desligado."
   else
     log_info "${name} já está parado."
@@ -568,21 +669,26 @@ cmd_help() {
   cat <<EOF
 wa-farm v${VERSION} — Ultra-Low-RAM Android Emulator Farm for WhatsApp
 
-Uso: ./wa-farm.sh <comando> [argumentos]
+Uso: ./wa-farm.sh <comando> [argumentos] [flags]
 
 Comandos Principais:
+  list, status, ps              Exibe a tabela das ${MAX_ACCOUNTS} contas, modo (JANELA GUI / HEADLESS), PID, Total em execução e Consumo Total de RAM
+  show <1..${MAX_ACCOUNTS}>                   Sai do modo background/headless, abre a janela gráfica do emulador e traz para a frente da tela
+  bootstrap <1..${MAX_ACCOUNTS}> [flags]      TUDO EM 1: Cria o AVD, abre o emulador, otimiza o Android e já instala/abre o WhatsApp
+  start <1..${MAX_ACCOUNTS}|all> [flags]      Inicia o emulador de uma conta ou de todas
   setup                         Instala o Android Emulator (${ABI_TYPE}), imagem AOSP pura (Android ${ANDROID_API}) e baixa o WhatsApp.apk oficial
   create [1..${MAX_ACCOUNTS}|all]             Cria os celulares virtuais (wa_01 a wa_0${MAX_ACCOUNTS}) com perfil de máxima economia de RAM (${RAM_MB} MB, ${LCD_WIDTH}x${LCD_HEIGHT})
-  bootstrap <1..${MAX_ACCOUNTS}> [--webcam]   TUDO EM 1: Cria o AVD (se necessário), abre o emulador, otimiza o Android e já instala/abre o WhatsApp
-  start <1..${MAX_ACCOUNTS}|all> [--headless] Abre o emulador da conta (1 a ${MAX_ACCOUNTS}) ou todos (--headless roda sem janela gastando o mínimo de RAM)
   install-wa <1..${MAX_ACCOUNTS}|all>         Otimiza o sistema Android via ADB e instala/abre o WhatsApp.apk oficial
   qr <1..${MAX_ACCOUNTS}> <imagem.png>        Injeta a imagem do QR Code do sistema de mensageria na câmera virtual traseira do emulador
   pair <1..${MAX_ACCOUNTS}> <CODIGO8D>        Digita automaticamente o código de pareamento de 8 dígitos no WhatsApp do emulador
-  status                        Exibe tabela das contas (wa_01..wa_0${MAX_ACCOUNTS}), porta ADB e consumo real de RAM em MB
   stop [1..${MAX_ACCOUNTS}|all]               Desliga o emulador de uma conta ou de todas
   heartbeat                     Liga cada uma das contas em modo headless por 60s (1 por vez) para renovar a sessão de 14 dias
-  --version, -v                 Exibe a versão atual
-  --help, -h                    Exibe esta ajuda
+
+Flags de Visibilidade / Execução (para 'start' e 'bootstrap'):
+  --foreground, --fg            Roda o emulador anexado diretamente ao terminal atual (sem ir para background) com janela visível
+  --gui, --show, --window       Garante abertura com janela gráfica visível (se estiver em --headless, reinicia com janela e foca na tela)
+  --headless                    Roda em background sem janela gráfica (-no-window -gpu off) para máxima economia de RAM
+  --webcam                      Usa a webcam física do computador (webcam0) na câmera traseira para ler QR Code
 EOF
 }
 
@@ -590,17 +696,18 @@ ACTION="${1:-help}"
 shift || true
 
 case "$ACTION" in
-  setup)          cmd_setup "$@" ;;
-  create)         cmd_create "$@" ;;
-  bootstrap)      cmd_bootstrap "$@" ;;
-  start)          cmd_start "$@" ;;
-  install-wa)     cmd_install_wa "$@" ;;
-  qr)             cmd_qr "$@" ;;
-  pair)           cmd_pair "$@" ;;
-  status)         cmd_status "$@" ;;
-  stop)           cmd_stop "$@" ;;
-  heartbeat)      cmd_heartbeat "$@" ;;
-  --version|-v)   echo "wa-farm v${VERSION}" ;;
-  --help|-h|help) cmd_help ;;
-  *)              cmd_help ;;
+  setup)                  cmd_setup "$@" ;;
+  create)                 cmd_create "$@" ;;
+  bootstrap)              cmd_bootstrap "$@" ;;
+  start)                  cmd_start "$@" ;;
+  show|attach|gui)        cmd_show "$@" ;;
+  install-wa)             cmd_install_wa "$@" ;;
+  qr)                     cmd_qr "$@" ;;
+  pair)                   cmd_pair "$@" ;;
+  list|ls|status|ps)      cmd_status "$@" ;;
+  stop)                   cmd_stop "$@" ;;
+  heartbeat)              cmd_heartbeat "$@" ;;
+  --version|-v)           echo "wa-farm v${VERSION}" ;;
+  --help|-h|help)         cmd_help ;;
+  *)                      cmd_help ;;
 esac
