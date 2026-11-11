@@ -1,10 +1,10 @@
-# Contribuindo com o `wa-android-farm`
+# Contribuindo com o `wa-farm`
 
-Obrigado pelo interesse em contribuir com o **`wa-android-farm`**!
+Obrigado pelo interesse em contribuir com o **`wa-farm`**!
 
 ## Como Contribuir
 
-1. Faça um **Fork** do repositório (`https://github.com/rogerin/wa-android-farm`).
+1. Faça um **Fork** do repositório (`https://github.com/rogerin/wa-farm`).
 2. Crie uma branch para sua feature ou correção:
    ```bash
    git checkout -b feat/minha-melhoria

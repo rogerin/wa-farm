@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>wa-farm • Emuladores Android Ultra-Low-RAM para Múltiplas Contas de WhatsApp | KeyCore Open Source</title>
+  <meta name="description" content="Orquestrador CLI open-source para criar, emular e manter 7+ contas de WhatsApp em emuladores Android isolados consumindo ~850 MB de RAM (-78,5% vs Android Studio)." />
+  <meta property="og:title" content="wa-farm • Emuladores Android Ultra-Low-RAM para WhatsApp" />
+  <meta property="og:description" content="Rode 7+ contas de WhatsApp em emuladores Android AOSP puros gastando ~850 MB de RAM por instância. Inclui injeção de QR Code na câmera virtual, pareamento de 8 dígitos e Skill de IA." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://rogerin.github.io/wa-farm/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --keycore-navy: #0E002A;
+      --keycore-surface-dark: #20133C;
+      --keycore-magenta: #FE00CD;
+      --keycore-cyan: #00DEFE;
+      --keycore-violet: #7142E8;
+      --keycore-blue: #2F88F3;
+      --keycore-white: #FFFFFF;
+      --keycore-ice: #F6F7FB;
+      --keycore-slate: #5E6173;
+      --keycore-border: #DEE1EA;
+
+      --state-success-fg: #187351;
+      --state-success-bg: #EAF5EF;
+      --state-info-fg: #2756B5;
+      --state-info-bg: #EDF2FE;
+      --state-warn-fg: #8A5200;
+      --state-warn-bg: #FFF3D9;
+      --state-error-fg: #B42342;
+      --state-error-bg: #FCECF0;
+
+      --font-display: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      color: var(--keycore-navy);
+      background-color: var(--keycore-white);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Barra Superior Editorial KeyCore */
+    .editorial-top-bar {
+      height: 4px;
+      width: 100%;
+      background: linear-gradient(90deg, #FE00CD 0%, #7142E8 35%, #2F88F3 65%, #00DEFE 100%);
+    }
+
+    /* Navegação Superior Escura (#0E002A) */
+    .navbar {
+      background-color: var(--keycore-navy);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .navbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 76px;
+      gap: 20px;
+    }
+
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+    }
+
+    .brand-logo-dark {
+      width: 186px;
+      height: auto;
+      aspect-ratio: 3.78 / 1;
+      display: block;
+    }
+
+    .brand-logo-light {
+      width: 182px;
+      height: auto;
+      aspect-ratio: 3.78 / 1;
+      display: block;
+    }
+
+    .brand-divider {
+      width: 1px;
+      height: 26px;
+      background-color: rgba(255, 255, 255, 0.22);
+    }
+
+    .repo-badge {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--keycore-cyan);
+      background-color: var(--keycore-surface-dark);
+      padding: 5px 11px;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 222, 254, 0.3);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--keycore-ice);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: color 0.15s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--keycore-cyan);
+    }
+
+    /* Botões com Contraste WCAG 2.2 Estrito (#0E002A sobre #00DEFE = 12,24:1) */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 11px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-cyan {
+      background-color: var(--keycore-cyan);
+      color: var(--keycore-navy);
+    }
+
+    .btn-navy {
+      background-color: var(--keycore-navy);
+      color: var(--keycore-white);
+    }
+
+    .btn-outline-dark {
+      background-color: var(--keycore-surface-dark);
+      color: var(--keycore-white);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-outline-light {
+      background-color: var(--keycore-white);
+      color: var(--keycore-navy);
+      border: 1px solid var(--keycore-border);
+    }
+
+    /* Hero Escuro (#0E002A) */
+    .hero {
+      background-color: var(--keycore-navy);
+      color: var(--keycore-white);
+      padding: 72px 0 84px;
+      border-bottom: 1px solid var(--keycore-surface-dark);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.12fr 0.88fr;
+      gap: 44px;
+      align-items: center;
+    }
+
+    .kicker {
+      display: inline-block;
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--keycore-cyan);
+      margin-bottom: 14px;
+    }
+
+    .kicker-light {
+      color: var(--keycore-slate);
+    }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: 2.65rem;
+      font-weight: 600;
+      line-height: 1.16;
+      letter-spacing: -0.02em;
+      color: var(--keycore-white);
+      margin-bottom: 18px;
+    }
+
+    .hero h1 span {
+      color: var(--keycore-cyan);
+    }
+
+    .hero-subtitle {
+      font-size: 1.06rem;
+      color: var(--keycore-ice);
+      opacity: 0.92;
+      margin-bottom: 24px;
+      max-width: 600px;
+    }
+
+    /* Assinatura Gráfica Dupla KeyCore (Magenta + Ciano) */
+    .double-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 22px 0 28px;
+    }
+
+    .double-bar .seg-magenta {
+      width: 68px;
+      height: 4px;
+      background-color: var(--keycore-magenta);
+      border-radius: 2px;
+    }
+
+    .double-bar .seg-cyan {
+      width: 68px;
+      height: 4px;
+      background-color: var(--keycore-cyan);
+      border-radius: 2px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      font-size: 0.82rem;
+      color: var(--keycore-ice);
+      opacity: 0.85;
+    }
+
+    /* Terminal Interativo no Hero (#20133C) */
+    .terminal-card {
+      background-color: var(--keycore-surface-dark);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background-color: rgba(14, 0, 42, 0.65);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .terminal-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .terminal-tabs {
+      display: flex;
+      gap: 6px;
+    }
+
+    .term-tab {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: var(--keycore-ice);
+      font-family: var(--font-mono);
+      font-size: 0.73rem;
+      padding: 4px 9px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .term-tab.active {
+      background-color: var(--keycore-cyan);
+      color: var(--keycore-navy);
+      border-color: var(--keycore-cyan);
+      font-weight: 600;
+    }
+
+    .terminal-body {
+      padding: 18px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.65;
+      color: var(--keycore-white);
+      min-height: 290px;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+
+    .cmd-prompt {
+      color: var(--keycore-cyan);
+      font-weight: 600;
+    }
+
+    .cmd-ok {
+      color: var(--keycore-cyan);
+    }
+
+    .cmd-comment {
+      color: var(--state-info-bg);
+    }
+
+    /* Faixa de KPIs Executivos */
+    .kpi-section {
+      margin-top: -38px;
+      position: relative;
+      z-index: 10;
+      margin-bottom: 56px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .kpi-card {
+      background-color: var(--keycore-white);
+      border: 1px solid var(--keycore-border);
+      border-radius: 10px;
+      padding: 22px 20px;
+      box-shadow: 0 8px 24px rgba(14, 0, 42, 0.05);
+    }
+
+    .kpi-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .kpi-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--keycore-slate);
+    }
+
+    .kpi-value {
+      font-family: var(--font-display);
+      font-size: 2.15rem;
+      font-weight: 600;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 10px;
+      color: var(--keycore-navy);
+    }
+
+    .kpi-value.green { color: var(--state-success-fg); }
+    .kpi-value.blue { color: var(--state-info-fg); }
+
+    .kpi-foot {
+      border-top: 1px solid var(--keycore-border);
+      padding-top: 10px;
+      font-size: 0.83rem;
+      color: var(--keycore-slate);
+    }
+
+    /* Pílulas Semânticas WCAG 1.4.1 (Círculo + Palavra Explícita) */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .pill-success {
+      background-color: var(--state-success-bg);
+      color: var(--state-success-fg);
+    }
+    .pill-success .status-dot { background-color: var(--state-success-fg); }
+
+    .pill-info {
+      background-color: var(--state-info-bg);
+      color: var(--state-info-fg);
+    }
+    .pill-info .status-dot { background-color: var(--state-info-fg); }
+
+    .pill-warn {
+      background-color: var(--state-warn-bg);
+      color: var(--state-warn-fg);
+    }
+    .pill-warn .status-dot { background-color: var(--state-warn-fg); }
+
+    .pill-error {
+      background-color: var(--state-error-bg);
+      color: var(--state-error-fg);
+    }
+    .pill-error .status-dot { background-color: var(--state-error-fg); }
+
+    /* Seções Editoriais Numeradas */
+    .section {
+      padding: 64px 0;
+      border-bottom: 1px solid var(--keycore-border);
+    }
+
+    .section-ice {
+      background-color: var(--keycore-ice);
+    }
+
+    .section-dark {
+      background-color: var(--keycore-navy);
+      color: var(--keycore-white);
+      border-bottom: 1px solid var(--keycore-surface-dark);
+    }
+
+    .section-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--keycore-border);
+      font-size: 0.76rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--keycore-slate);
+    }
+
+    .section-dark .section-header-bar {
+      border-bottom-color: rgba(255, 255, 255, 0.14);
+      color: var(--keycore-cyan);
+    }
+
+    .section-title-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background-color: var(--keycore-ice);
+      border: 1px solid var(--keycore-border);
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--keycore-navy);
+      flex-shrink: 0;
+    }
+
+    .section-ice .step-badge {
+      background-color: var(--keycore-white);
+    }
+
+    .section-dark .step-badge {
+      background-color: var(--keycore-surface-dark);
+      border-color: rgba(0, 222, 254, 0.35);
+      color: var(--keycore-cyan);
+    }
+
+    .section h2 {
+      font-family: var(--font-display);
+      font-size: 1.85rem;
+      font-weight: 600;
+      color: var(--keycore-navy);
+      letter-spacing: -0.015em;
+    }
+
+    .section-dark h2 {
+      color: var(--keycore-white);
+    }
+
+    .section-lead {
+      font-size: 1rem;
+      color: var(--keycore-slate);
+      max-width: 820px;
+      margin-bottom: 32px;
+    }
+
+    .section-dark .section-lead {
+      color: var(--keycore-ice);
+      opacity: 0.9;
+    }
+
+    /* Calculadora Interativa de RAM */
+    .calc-box {
+      background-color: var(--keycore-white);
+      border: 1px solid var(--keycore-border);
+      border-radius: 12px;
+      padding: 28px;
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .calc-controls label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.92rem;
+      margin-bottom: 8px;
+      color: var(--keycore-navy);
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--keycore-navy);
+      height: 6px;
+      cursor: pointer;
+    }
+
+    .slider-val {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--keycore-navy);
+      background-color: var(--keycore-ice);
+      border: 1px solid var(--keycore-border);
+      padding: 4px 14px;
+      border-radius: 8px;
+      font-variant-numeric: tabular-nums;
+      min-width: 96px;
+      text-align: right;
+    }
+
+    .mode-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mode-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid var(--keycore-border);
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: var(--keycore-ice);
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .mode-option.selected {
+      border-color: var(--keycore-navy);
+      background-color: var(--keycore-white);
+      box-shadow: 0 2px 8px rgba(14, 0, 42, 0.06);
+    }
+
+    .mode-option input {
+      margin-top: 4px;
+      accent-color: var(--keycore-navy);
+    }
+
+    .mode-option-title {
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--keycore-navy);
+    }
+
+    .mode-option-desc {
+      font-size: 0.79rem;
+      color: var(--keycore-slate);
+    }
+
+    .calc-results {
+      background-color: var(--keycore-ice);
+      border: 1px solid var(--keycore-border);
+      border-radius: 10px;
+      padding: 24px;
+    }
+
+    .bar-group {
+      margin-bottom: 20px;
+    }
+
+    .bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 16px;
+      background-color: var(--keycore-border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    .bar-fill.bad {
+      background-color: var(--state-error-fg);
+    }
+
+    .bar-fill.good {
+      background-color: var(--state-success-fg);
+    }
+
+    /* Tabelas Técnicas Padrão KeyCore */
+    .table-wrap {
+      background-color: var(--keycore-white);
+      border: 1px solid var(--keycore-border);
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    thead th {
+      background-color: var(--keycore-navy);
+      color: var(--keycore-white);
+      font-weight: 600;
+      text-align: left;
+      padding: 13px 16px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    thead th.num,
+    tbody td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--keycore-border);
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: var(--keycore-ice);
+    }
+
+    tbody td {
+      padding: 13px 16px;
+      color: var(--keycore-navy);
+      vertical-align: middle;
+    }
+
+    code.inline-code {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      background-color: var(--keycore-ice);
+      border: 1px solid var(--keycore-border);
+      padding: 2px 7px;
+      border-radius: 5px;
+      color: var(--keycore-navy);
+    }
+
+    /* Bloco do Prompt de Engenharia de Contexto */
+    .prompt-container {
+      background-color: var(--keycore-surface-dark);
+      border: 1px solid rgba(0, 222, 254, 0.3);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .prompt-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background-color: rgba(14, 0, 42, 0.7);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .prompt-pre {
+      padding: 22px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.65;
+      color: var(--keycore-ice);
+      overflow-x: auto;
+      max-height: 440px;
+      white-space: pre;
+    }
+
+    /* Abas de Pareamento QR Code / Código 8 Dígitos */
+    .tabs-header {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 11px 18px;
+      border-radius: 8px;
+      border: 1px solid var(--keycore-border);
+      background-color: var(--keycore-white);
+      color: var(--keycore-slate);
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background-color: var(--keycore-navy);
+      color: var(--keycore-white);
+      border-color: var(--keycore-navy);
+    }
+
+    .tab-panel {
+      display: none;
+      background-color: var(--keycore-white);
+      border: 1px solid var(--keycore-border);
+      border-radius: 10px;
+      padding: 26px;
+    }
+
+    .tab-panel.active {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .code-snippet {
+      background-color: var(--keycore-navy);
+      color: var(--keycore-white);
+      padding: 18px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      overflow-x: auto;
+    }
+
+    .copy-mini-btn {
+      background-color: var(--keycore-ice);
+      border: 1px solid var(--keycore-border);
+      color: var(--keycore-navy);
+      font-family: var(--font-sans);
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .copy-mini-btn:hover {
+      background-color: var(--keycore-cyan);
+      border-color: var(--keycore-cyan);
+    }
+
+    /* Cards de Checklist Anti-Banimento */
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .check-card {
+      background-color: var(--keycore-white);
+      border: 1px solid var(--keycore-border);
+      border-radius: 10px;
+      padding: 22px;
+    }
+
+    .check-card h3 {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      margin: 10px 0 8px;
+      color: var(--keycore-navy);
+    }
+
+    .check-card p {
+      font-size: 0.88rem;
+      color: var(--keycore-slate);
+    }
+
+    /* Rodapé Institucional Oficial KeyCore */
+    .footer {
+      background-color: var(--keycore-navy);
+      color: var(--keycore-ice);
+      padding: 56px 0 36px;
+    }
+
+    .footer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 32px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .footer-bottom {
+      padding-top: 22px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 0.78rem;
+      color: rgba(246, 247, 251, 0.75);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 960px) {
+      .hero-grid,
+      .calc-box,
+      .tab-panel.active {
+        grid-template-columns: 1fr;
+      }
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .checklist-grid {
+        grid-template-columns: 1fr;
+      }
+      .nav-links {
+        display: none;
+      }
+      .hero h1 {
+        font-size: 2.1rem;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="editorial-top-bar"></div>
+
+  <!-- Navegação Principal Escura (#0E002A) com logo-keycore-dark-crop.png -->
+  <header class="navbar">
+    <div class="container navbar-inner">
+      <a href="https://keycore.com.br" target="_blank" rel="noopener" class="brand-link">
+        <img src="assets/logo-keycore-dark-crop.png" alt="KeyCore Tech Hub" class="brand-logo-dark" />
+        <span class="brand-divider"></span>
+        <span class="repo-badge">wa-farm v1.0.0</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#calculadora">Calculadora de RAM</a></li>
+        <li><a href="#cortes">7 Cortes Técnicos</a></li>
+        <li><a href="#prompt-ia">Prompt IA + Skill</a></li>
+        <li><a href="#pareamento">QR Code &amp; Pareamento</a></li>
+        <li><a href="#comandos">Comandos CLI</a></li>
+      </ul>
+      <a href="https://github.com/rogerin/wa-farm" target="_blank" rel="noopener" class="btn btn-cyan">
+        Ver no GitHub →
+      </a>
+    </div>
+  </header>
+
+  <!-- Hero Escuro (#0E002A) -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="kicker">KEYCORE OPEN SOURCE • ORQUESTRADOR ANDROID ULTRA-LOW-RAM</span>
+        <h1>Emule 7+ contas de WhatsApp gastando <span>78,5% menos memória RAM</span>.</h1>
+        <p class="hero-subtitle">
+          Ative chips novos e integre múltiplos números ao seu sistema de mensageria sem depender de aparelhos físicos na tomada e sem travar sua máquina com os 28 GB de RAM exigidos pelos emuladores padrão do Android Studio.
+        </p>
+
+        <div class="double-bar">
+          <span class="seg-magenta"></span>
+          <span class="seg-cyan"></span>
+        </div>
+
+        <div class="hero-actions">
+          <a href="#prompt-ia" class="btn btn-cyan">Instalar com 1 Prompt de IA</a>
+          <a href="https://github.com/rogerin/wa-farm" target="_blank" rel="noopener" class="btn btn-outline-dark">Repositório rogerin/wa-farm</a>
+        </div>
+
+        <div class="hero-meta">
+          <span>• macOS Apple Silicon (ARM64) &amp; Intel</span>
+          <span>• Linux KVM (x86_64 / ARM64)</span>
+          <span>• Licença MIT</span>
+        </div>
+      </div>
+
+      <!-- Terminal Interativo -->
+      <div class="terminal-card">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span style="background:#FE00CD;"></span>
+            <span style="background:#7142E8;"></span>
+            <span style="background:#00DEFE;"></span>
+          </div>
+          <div class="terminal-tabs">
+            <button class="term-tab active" onclick="switchTerm('bootstrap', this)">bootstrap</button>
+            <button class="term-tab" onclick="switchTerm('status', this)">status</button>
+            <button class="term-tab" onclick="switchTerm('qr', this)">qr / pair</button>
+            <button class="term-tab" onclick="switchTerm('heartbeat', this)">heartbeat</button>
+          </div>
+        </div>
+        <div class="terminal-body" id="hero-terminal-content"><span class="cmd-comment"># Cria AVD ultra-leve, inicia emulador, aplica debloat e abre o WhatsApp:</span>
+<span class="cmd-prompt">$</span> ./wa-farm.sh bootstrap 1
+
+[wa-farm] Verificando SDK Android (arm64-v8a)...
+[wa-farm] Criando celular virtual wa_01 (Conta #1 | Porta 5554 | RAM: 896 MB)...
+<span class="cmd-ok">[OK] AVD wa_01 configurado (360x640@160dpi, 896MB RAM, sem Play Store).</span>
+[wa-farm] Aplicando otimizações internas de economia de RAM via ADB...
+[wa-farm] Instalando WhatsApp.apk oficial direto da CDN da Meta...
+<span class="cmd-ok">[OK] WhatsApp instalado e aberto em wa_01 (emulator-5554)!</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Faixa Executiva de KPIs -->
+  <section class="kpi-section">
+    <div class="container kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">Memória por Instância</span>
+          <span class="status-pill pill-success"><span class="status-dot"></span>Otimizado</span>
+        </div>
+        <div class="kpi-value green">~850 MB</div>
+        <div class="kpi-foot">Imagem AOSP pura (Android 12) com teto estrito de 896 MB RAM e 96 MB Heap.</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">Redução de Consumo</span>
+          <span class="status-pill pill-info"><span class="status-dot"></span>Economia Real</span>
+        </div>
+        <div class="kpi-value blue">-78,5 %</div>
+        <div class="kpi-foot">Comparado aos 3,9 GB consumidos por um AVD padrão com Google Play Services.</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">Autonomia Multi-Device</span>
+          <span class="status-pill pill-success"><span class="status-dot"></span>Ativo</span>
+        </div>
+        <div class="kpi-value">14 dias</div>
+        <div class="kpi-foot">A sessão da API de mensageria permanece ativa com o emulador desligado.</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">7 Contas via Heartbeat</span>
+          <span class="status-pill pill-success"><span class="status-dot"></span>Concluído</span>
+        </div>
+        <div class="kpi-value green">&lt; 900 MB</div>
+        <div class="kpi-foot">Renovação semanal em fila headless (1 emulador por vez durante 60 s).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Seção 01: Calculadora Interativa de Memória RAM -->
+  <section class="section section-ice" id="calculadora">
+    <div class="container">
+      <div class="section-header-bar">
+        <span>01 / DIMENSIONAMENTO DE CAPACIDADE E MEMÓRIA</span>
+        <span>KEYCORE • SIMULADOR TÉCNICO</span>
+      </div>
+
+      <div class="section-title-row">
+        <span class="step-badge">01</span>
+        <h2>Calculadora Interativa de Consumo de RAM</h2>
+      </div>
+      <p class="section-lead">
+        Simule quantas contas de WhatsApp você precisa integrar e compare o consumo de memória entre emuladores tradicionais do Android Studio e os modos de operação do <strong>wa-farm</strong>.
+      </p>
+
+      <div class="calc-box">
+        <div class="calc-controls">
+          <label for="account-slider">Quantidade de Contas de WhatsApp:</label>
+          <div class="slider-row">
+            <input type="range" id="account-slider" min="1" max="20" value="7" oninput="updateCalculator()" />
+            <div class="slider-val" id="account-count-label">7 contas</div>
+          </div>
+
+          <label>Modo de Operação do wa-farm:</label>
+          <div class="mode-selector">
+            <label class="mode-option selected" id="opt-heartbeat">
+              <input type="radio" name="wa-mode" value="heartbeat" checked onchange="updateCalculator()" />
+              <div>
+                <div class="mode-option-title">Modo 1: Pareamento Sob Demanda + Heartbeat Semanal (Recomendado)</div>
+                <div class="mode-option-desc">Abre 1 emulador por vez para parear e renova as sessões de 14 dias em fila headless.</div>
+              </div>
+            </label>
+
+            <label class="mode-option" id="opt-headless">
+              <input type="radio" name="wa-mode" value="headless" onchange="updateCalculator()" />
+              <div>
+                <div class="mode-option-title">Modo 2: Todos Simultâneos em Background (--headless)</div>
+                <div class="mode-option-desc">Mantém todas as contas abertas ao mesmo tempo sem janela gráfica (-no-window -gpu off).</div>
+              </div>
+            </label>
+
+            <label class="mode-option" id="opt-gui">
+              <input type="radio" name="wa-mode" value="gui" onchange="updateCalculator()" />
+              <div>
+                <div class="mode-option-title">Modo 3: Todos Simultâneos com Janela Compacta (360x640)</div>
+                <div class="mode-option-desc">Todas as janelas abertas simultaneamente na área de trabalho.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="calc-results">
+          <div class="bar-group">
+            <div class="bar-header">
+              <span>Emulador Padrão Android Studio (Google Play Full HD)</span>
+              <span id="std-ram-text" style="font-variant-numeric: tabular-nums; color: var(--state-error-fg);">27,3 GB RAM</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill bad" id="std-bar" style="width: 85%;"></div>
+            </div>
+            <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.78rem; color: var(--keycore-slate);">3,9 GB por instância</span>
+              <span class="status-pill pill-error" id="std-pill"><span class="status-dot"></span>Trava máquinas de 16 GB / 18 GB</span>
+            </div>
+          </div>
+
+          <div class="bar-group" style="margin-top: 26px; margin-bottom: 10px;">
+            <div class="bar-header">
+              <span>wa-farm (Perfil KeyCore Ultra-Low-RAM AOSP)</span>
+              <span id="wa-ram-text" style="font-variant-numeric: tabular-nums; color: var(--state-success-fg); font-size: 1.15rem;">0,85 GB RAM</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill good" id="wa-bar" style="width: 8%;"></div>
+            </div>
+            <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.78rem; color: var(--keycore-slate);" id="wa-subtext">1 instância ativa por vez (~850 MB)</span>
+              <span class="status-pill pill-success" id="wa-pill"><span class="status-dot"></span>Ativo • Folga total em 8 GB / 16 GB</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Seção 02: Os 7 Cortes Técnicos de Memória -->
+  <section class="section" id="cortes">
+    <div class="container">
+      <div class="section-header-bar">
+        <span>02 / ENGENHARIA DE OTIMIZAÇÃO QEMU &amp; ANDROID AOSP</span>
+        <span>KEYCORE • ARQUITETURA TÉCNICA</span>
+      </div>
+
+      <div class="section-title-row">
+        <span class="step-badge">02</span>
+        <h2>Os 7 Cortes Técnicos de Memória do wa-farm</h2>
+      </div>
+      <p class="section-lead">
+        Cada parâmetro do arquivo <code class="inline-code">config.ini</code> e da linha de comando do emulador foi auditado para remover processos desnecessários sem afetar o funcionamento oficial do WhatsApp.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Camada de Otimização</th>
+              <th>Android Studio Padrão</th>
+              <th>Perfil wa-farm Ultra-Low-RAM</th>
+              <th class="num">Economia por VM</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Imagem de Sistema</strong></td>
+              <td>Google Play (<code class="inline-code">google_apis_playstore</code>)</td>
+              <td><strong>AOSP Puro (<code class="inline-code">android-31;default;arm64-v8a</code>)</strong></td>
+              <td class="num">-600 MB</td>
+              <td><span class="status-pill pill-success"><span class="status-dot"></span>Concluído</span></td>
+            </tr>
+            <tr>
+              <td><strong>2. Instalação do App</strong></td>
+              <td>Login manual na Play Store</td>
+              <td><strong>Download direto do <code class="inline-code">WhatsApp.apk</code> oficial da Meta</strong></td>
+              <td class="num">-250 MB</td>
+              <td><span class="status-pill pill-success"><span class="status-dot"></span>Concluído</span></td>
+            </tr>
+            <tr>
+              <td><strong>3. Resolução e Densidade</strong></td>
+              <td><code class="inline-code">1080 x 2400 px</code> (<code class="inline-code">420 dpi</code>)</td>
+              <td><strong><code class="inline-code">360 x 640 px</code> (<code class="inline-code">160 dpi</code> mdpi)</strong></td>
+              <td class="num">-90,0 % VRAM</td>
+              <td><span class="status-pill pill-success"><span class="status-dot"></span>Concluído</span></td>
+            </tr>
+            <tr>
+              <td><strong>4. Teto de RAM e VM Heap</strong></td>
+              <td><code class="inline-code">2048 MB</code> RAM / <code class="inline-code">256 MB</code> Heap</td>
+              <td><strong><code class="inline-code">896 MB</code> RAM / <code class="inline-code">96 MB</code> Heap / <code class="inline-code">1 Core</code></strong></td>
+              <td class="num">-1.152 MB</td>
+              <td><span class="status-pill pill-success"><span class="status-dot"></span>Concluído</span></td>
+            </tr>
+            <tr>
+              <td><strong>5. Snapshots e Boot Anim</strong></td>
+              <td>Snapshots em disco/RAM habilitados</td>
+              <td><strong><code class="inline-code">-no-snapshot -no-boot-anim -no-snapstorage</code></strong></td>
+              <td class="num">-450 MB</td>
+              <td><span class="status-pill pill-success"><span class="status-dot"></span>Concluído</span></td>
+            </tr>
+            <tr>
+              <td><strong>6. Áudio e Sensores</strong></td>
+              <td>Áudio, GPS, Giroscópio e Bússola ativos</td>
+              <td><strong><code class="inline-code">-no-audio</code>, GPS e sensores desligados</strong></td>
+              <td class="num">-120 MB</td>
+              <td><span class="status-pill pill-success"><span class="status-dot"></span>Concluído</span></td>
+            </tr>
+            <tr>
+              <td><strong>7. Debloat pós-boot via ADB</strong></td>
+              <td>Calendar, Email, Music, Dialer, Gallery ativos</td>
+              <td><strong>Desativa animações + congela 10 pacotes nativos</strong></td>
+              <td class="num">-150 MB</td>
+              <td><span class="status-pill pill-success"><span class="status-dot"></span>Concluído</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Seção 03: One-Prompt AI Installer (Engenharia de Contexto + Skill) -->
+  <section class="section section-dark" id="prompt-ia">
+    <div class="container">
+      <div class="section-header-bar">
+        <span>03 / INSTALAÇÃO AGÊNTICA &amp; ENGENHARIA DE CONTEXTO</span>
+        <span>KEYCORE • SKILL MULTI-AGENTE</span>
+      </div>
+
+      <div class="section-title-row">
+        <span class="step-badge">03</span>
+        <h2>Instale a Ferramenta + Skill Especialista com 1 Único Prompt</h2>
+      </div>
+      <p class="section-lead">
+        Copie o prompt estruturado em XML abaixo e cole no <strong>Claude Code</strong>, <strong>Gemini CLI / Antigravity</strong>, <strong>OpenAI Codex CLI</strong> ou <strong>Cursor</strong>. O agente instalará o <code class="inline-code" style="background:#20133C;color:#00DEFE;border-color:rgba(0,222,254,0.3);">wa-farm</code> e registrará a Skill <code class="inline-code" style="background:#20133C;color:#00DEFE;border-color:rgba(0,222,254,0.3);">skills/wa-farm/SKILL.md</code> automaticamente.
+      </p>
+
+      <div class="prompt-container">
+        <div class="prompt-toolbar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="repo-badge">PROMPT XML • ENGENHARIA DE CONTEXTO</span>
+            <span style="font-size:0.82rem;color:var(--keycore-ice);">Compatível com Claude Code, Gemini, Codex e Cursor</span>
+          </div>
+          <button class="btn btn-cyan" onclick="copyPrompt(this)" id="copy-prompt-btn">
+            Copiar Prompt Completo
+          </button>
+        </div>
+        <pre class="prompt-pre" id="context-prompt-text">&lt;context_engineering_prompt version="1.0.0" project="wa-farm"&gt;
+  &lt;role&gt;
+    Você é um Engenheiro DevOps Sênior especialista em Automação Android (SDK/ADB/QEMU) e Engenharia de Agentes de IA.
+    Sua missão é instalar, configurar e validar a ferramenta open-source `wa-farm` (https://github.com/rogerin/wa-farm) na máquina local e instalar a Skill especialista `wa-farm` para que você saiba operar fazendas de emuladores Android Ultra-Low-RAM (~850 MB por instância) para múltiplas contas de WhatsApp.
+  &lt;/role&gt;
+
+  &lt;system_context&gt;
+    - Repositório Oficial: `https://github.com/rogerin/wa-farm.git`
+    - Documentação Oficial: `https://rogerin.github.io/wa-farm/`
+    - Arquitetura da Ferramenta: Emuladores Android AOSP puros (Android 12 / API 31, sem Google Play Services), resolução `360x640` a `160 dpi`, teto de `896 MB RAM` e `96 MB VM Heap`, download direto do `WhatsApp.apk` oficial da Meta e pareamento via injeção de imagem PNG na câmera virtual (`virtualscene` / `Toren1BD.posters`) ou código de 8 dígitos via ADB (`input text`).
+    - Diretório de instalação padrão: `~/wa-farm` (ou o diretório atual caso o usuário solicite).
+  &lt;/system_context&gt;
+
+  &lt;strict_constraints&gt;
+    1. NUNCA instale imagens pesadas com Google Play Store (`google_apis_playstore`). Use exclusivamente o fluxo oficial do `./wa-farm.sh` (`default;arm64-v8a` em Apple Silicon ou `default;x86_64` em Intel/AMD).
+    2. Execute cada etapa de forma determinística no terminal e valide a saída antes de avançar para a próxima.
+    3. Ao finalizar, registre obrigatoriamente a Skill `wa-farm` nos diretórios globais de skills do agente (`~/.claude/skills/wa-farm/SKILL.md`, `~/.gemini/config/skills/wa-farm/SKILL.md`, `~/.codex/skills/wa-farm/SKILL.md` e `~/.agents/skills/wa-farm/SKILL.md`).
+  &lt;/strict_constraints&gt;
+
+  &lt;execution_pipeline&gt;
+    ### Etapa 1 — Diagnóstico de Hardware e Dependências Base
+    Verifique `uname -m`, RAM disponível e as ferramentas `git`, `curl`, `adb`, `sdkmanager` e `avdmanager`:
+    - No macOS, se faltar `sdkmanager` ou `adb`: `brew install --cask temurin android-commandlinetools android-platform-tools`
+    - No Linux (Ubuntu/Debian), se faltar `adb` ou KVM: `sudo apt update &amp;&amp; sudo apt install -y openjdk-17-jdk curl unzip qemu-kvm adb`
+
+    ### Etapa 2 — Clonagem e Instalação da Ferramenta + Skill `wa-farm`
+    ```bash
+    git clone https://github.com/rogerin/wa-farm.git ~/wa-farm
+    cd ~/wa-farm
+    chmod +x wa-farm.sh install-skill.sh
+    ./install-skill.sh
+    ```
+
+    ### Etapa 3 — Gate de Verificação Executável
+    Execute `~/wa-farm/wa-farm.sh --version` e `~/wa-farm/wa-farm.sh status`, exiba a tabela das 7 contas (`wa_01` a `wa_07`) e pergunte se desejo iniciar a Conta #1 agora com `~/wa-farm/wa-farm.sh bootstrap 1`.
+  &lt;/execution_pipeline&gt;
+&lt;/context_engineering_prompt&gt;</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Seção 04: Como Escanear o QR Code ou Parear no Emulador -->
+  <section class="section section-ice" id="pareamento">
+    <div class="container">
+      <div class="section-header-bar">
+        <span>04 / INTEGRAÇÃO COM SISTEMAS DE MENSAGERIA</span>
+        <span>KEYCORE • PARETO DE PAREAMENTO</span>
+      </div>
+
+      <div class="section-title-row">
+        <span class="step-badge">04</span>
+        <h2>Como Conectar o Emulador ao seu Sistema de Mensageria</h2>
+      </div>
+      <p class="section-lead">
+        Depois de fazer login com o número novo no WhatsApp do emulador, abra <strong>Mais opções (⋮) &gt; Aparelhos conectados &gt; Conectar um aparelho</strong> e escolha um dos 3 métodos abaixo:
+      </p>
+
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchPairTab('pair-a', this)">Método A • Código de 8 Dígitos (Sem Câmera)</button>
+        <button class="tab-btn" onclick="switchPairTab('pair-b', this)">Método B • Injeção de PNG do QR Code na Câmera Virtual</button>
+        <button class="tab-btn" onclick="switchPairTab('pair-c', this)">Método C • Webcam Física / OBS VirtualCam</button>
+      </div>
+
+      <!-- Painel A -->
+      <div class="tab-panel active" id="pair-a">
+        <div>
+          <span class="status-pill pill-success" style="margin-bottom:12px;"><span class="status-dot"></span>Mais Rápido • Zero Uso de Câmera</span>
+          <h3 style="font-family:var(--font-display);font-size:1.35rem;margin-bottom:10px;">Pareamento via Código de 8 Dígitos no ADB</h3>
+          <p style="color:var(--keycore-slate);margin-bottom:14px;">
+            1. Na tela de câmera do WhatsApp no emulador, toque em <strong>"Conectar com número de telefone"</strong> na parte inferior.<br/>
+            2. Gere o código de 8 caracteres no seu sistema de mensageria (Evolution API, WAHA, Baileys, Z-API).<br/>
+            3. Rode o comando ao lado para o script digitar o código instantaneamente no emulador.
+          </p>
+        </div>
+        <div class="code-snippet"><span class="cmd-comment"># Envia o código de 8 dígitos direto para a Conta #1 (wa_01):</span>
+<span class="cmd-prompt">$</span> ./wa-farm.sh pair 1 ABCD1234
+
+[wa-farm] Digitando código 'ABCD1234' em wa_01 (emulator-5554)...
+<span class="cmd-ok">[OK] Código enviado para a tela do WhatsApp!</span></div>
+      </div>
+
+      <!-- Painel B -->
+      <div class="tab-panel" id="pair-b">
+        <div>
+          <span class="status-pill pill-info" style="margin-bottom:12px;"><span class="status-dot"></span>Câmera Virtual 3D Nativa</span>
+          <h3 style="font-family:var(--font-display);font-size:1.35rem;margin-bottom:10px;">Injeção Direta do PNG do QR Code (<code class="inline-code">virtualscene</code>)</h3>
+          <p style="color:var(--keycore-slate);margin-bottom:14px;">
+            1. Salve um print apenas do QR Code exibido pelo seu sistema de mensageria (<code class="inline-code">qrcode.png</code>).<br/>
+            2. Execute o comando ao lado: ele grava a imagem no arquivo <code class="inline-code">Toren1BD.posters</code> da parede e mesa virtual do emulador.<br/>
+            3. Segure <code class="inline-code">Option/Alt</code> + teclas <code class="inline-code">W/A/S/D</code> ou mouse na câmera do emulador para enquadrar.
+          </p>
+        </div>
+        <div class="code-snippet"><span class="cmd-comment"># Injeta a imagem PNG do QR Code na câmera traseira de wa_01:</span>
+<span class="cmd-prompt">$</span> ./wa-farm.sh qr 1 ~/Desktop/qrcode.png
+
+<span class="cmd-ok">[OK] QR Code injetado na câmera virtual de wa_01!</span></div>
+      </div>
+
+      <!-- Painel C -->
+      <div class="tab-panel" id="pair-c">
+        <div>
+          <span class="status-pill pill-info" style="margin-bottom:12px;"><span class="status-dot"></span>Passthrough de Vídeo</span>
+          <h3 style="font-family:var(--font-display);font-size:1.35rem;margin-bottom:10px;">Leitura via Webcam do Host ou OBS Virtual Camera</h3>
+          <p style="color:var(--keycore-slate);margin-bottom:14px;">
+            Caso prefira apontar um QR Code de outra tela para a webcam do seu Mac/Linux ou transmitir uma janela via <strong>OBS Virtual Camera</strong>, basta iniciar a instância com a flag <code class="inline-code">--webcam</code>.
+          </p>
+        </div>
+        <div class="code-snippet"><span class="cmd-comment"># Inicia o emulador wa_01 conectando a câmera traseira à webcam0:</span>
+<span class="cmd-prompt">$</span> ./wa-farm.sh start 1 --webcam</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Seção 05: Catálogo Completo de Comandos CLI -->
+  <section class="section" id="comandos">
+    <div class="container">
+      <div class="section-header-bar">
+        <span>05 / REFERÊNCIA COMPLETA DA CLI (WA-FARM.SH)</span>
+        <span>KEYCORE • MANUAL DE OPERAÇÃO</span>
+      </div>
+
+      <div class="section-title-row">
+        <span class="step-badge">05</span>
+        <h2>Catálogo de Comandos Executáveis</h2>
+      </div>
+      <p class="section-lead">
+        Todos os comandos podem ser executados diretamente com <code class="inline-code">./wa-farm.sh</code>, via atalho global <code class="inline-code">wa-farm</code> ou via <code class="inline-code">npm run wa</code>.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Comando Oficial</th>
+              <th>Função Operacional</th>
+              <th class="num">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline-code">./wa-farm.sh bootstrap 1</code></td>
+              <td><strong>Tudo em 1:</strong> Instala SDK/APK (se faltar), cria <code class="inline-code">wa_01</code>, inicia o emulador, aplica debloat e abre o WhatsApp.</td>
+              <td class="num"><button class="copy-mini-btn" onclick="copyText('./wa-farm.sh bootstrap 1', this)">Copiar</button></td>
+            </tr>
+            <tr>
+              <td><code class="inline-code">./wa-farm.sh setup</code></td>
+              <td>Instala o Android Emulator, a imagem AOSP pura (<code class="inline-code">android-31</code>) e baixa o <code class="inline-code">WhatsApp.apk</code> oficial da Meta.</td>
+              <td class="num"><button class="copy-mini-btn" onclick="copyText('./wa-farm.sh setup', this)">Copiar</button></td>
+            </tr>
+            <tr>
+              <td><code class="inline-code">./wa-farm.sh create all</code></td>
+              <td>Cria os 7 celulares virtuais (<code class="inline-code">wa_01</code> a <code class="inline-code">wa_07</code>) com <code class="inline-code">config.ini</code> otimizado (<code class="inline-code">896 MB RAM</code>, <code class="inline-code">360x640</code>).</td>
+              <td class="num"><button class="copy-mini-btn" onclick="copyText('./wa-farm.sh create all', this)">Copiar</button></td>
+            </tr>
+            <tr>
+              <td><code class="inline-code">./wa-farm.sh start 1</code></td>
+              <td>Inicia o emulador da Conta #1 (<code class="inline-code">emulator-5554</code>) com janela gráfica compacta.</td>
+              <td class="num"><button class="copy-mini-btn" onclick="copyText('./wa-farm.sh start 1', this)">Copiar</button></td>
+            </tr>
+            <tr>
+              <td><code class="inline-code">./wa-farm.sh start all --headless</code></td>
+              <td>Inicia todas as 7 contas simultaneamente em segundo plano sem janela (<code class="inline-code">-no-window -gpu off</code>).</td>
+              <td class="num"><button class="copy-mini-btn" onclick="copyText('./wa-farm.sh start all --headless', this)">Copiar</button></td>
+            </tr>
+            <tr>
+              <td><code class="inline-code">./wa-farm.sh install-wa 1</code></td>
+              <td>Aplica debloat no Android via ADB, instala o <code class="inline-code">WhatsApp.apk</code>, libera permissões e abre o app.</td>
+              <td class="num"><button class="copy-mini-btn" onclick="copyText('./wa-farm.sh install-wa 1', this)">Copiar</button></td>
+            </tr>
+            <tr>
+              <td><code class="inline-code">./wa-farm.sh qr 1 ./qrcode.png</code></td>
+              <td>Injeta a imagem PNG do QR Code na cena virtual da câmera traseira do emulador.</td>
+              <td class="num"><button class="copy-mini-btn" onclick="copyText('./wa-farm.sh qr 1 ./qrcode.png', this)">Copiar</button></td>
+            </tr>
+            <tr>
+              <td><code class="inline-code">./wa-farm.sh pair 1 ABCD1234</code></td>
+              <td>Digita o código de pareamento de 8 dígitos diretamente no WhatsApp via ADB.</td>
+              <td class="num"><button class="copy-mini-btn" onclick="copyText('./wa-farm.sh pair 1 ABCD1234', this)">Copiar</button></td>
+            </tr>
+            <tr>
+              <td><code class="inline-code">./wa-farm.sh status</code></td>
+              <td>Exibe tabela com as 7 contas, porta ADB, status e consumo real de RAM em MB.</td>
+              <td class="num"><button class="copy-mini-btn" onclick="copyText('./wa-farm.sh status', this)">Copiar</button></td>
+            </tr>
+            <tr>
+              <td><code class="inline-code">./wa-farm.sh stop all</code></td>
+              <td>Desliga graciosamente todos os emuladores em execução, liberando 100% da RAM.</td>
+              <td class="num"><button class="copy-mini-btn" onclick="copyText('./wa-farm.sh stop all', this)">Copiar</button></td>
+            </tr>
+            <tr>
+              <td><code class="inline-code">./wa-farm.sh heartbeat</code></td>
+              <td>Liga cada conta em modo headless por 60 s (1 por vez) para renovar a sessão Multi-Device de 14 dias.</td>
+              <td class="num"><button class="copy-mini-btn" onclick="copyText('./wa-farm.sh heartbeat', this)">Copiar</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Seção 06: Boas Práticas Anti-Banimento -->
+  <section class="section section-ice">
+    <div class="container">
+      <div class="section-header-bar">
+        <span>06 / GOVERNANÇA OPERACIONAL &amp; PREVENÇÃO DE BLOQUEIOS</span>
+        <span>KEYCORE • SEGURANÇA DE OPERAÇÃO</span>
+      </div>
+
+      <div class="section-title-row">
+        <span class="step-badge">06</span>
+        <h2>Protocolo de Blindagem para Números Novos</h2>
+      </div>
+      <p class="section-lead">
+        Chips recém-ativados possuem score de confiança inicial sensível nos sistemas da Meta. Siga os 3 pilares abaixo ao operar suas 7 contas:
+      </p>
+
+      <div class="checklist-grid">
+        <div class="check-card">
+          <span class="status-pill pill-success"><span class="status-dot"></span>Isolamento de Hardware</span>
+          <h3>1 Conta = 1 AVD Exclusivo</h3>
+          <p>
+            Nunca faça login de vários números novos limpando os dados do mesmo emulador. O <code class="inline-code">wa-farm</code> cria <code class="inline-code">wa_01</code> a <code class="inline-code">wa_07</code> com partições <code class="inline-code">userdata-qemu.img</code> e Device IDs totalmente independentes.
+          </p>
+        </div>
+
+        <div class="check-card">
+          <span class="status-pill pill-warn"><span class="status-dot"></span>Atenção • Warm-up</span>
+          <h3>Janela de Estabilização (15–30 min)</h3>
+          <p>
+            Após validar o SMS/Ligação do número novo no emulador, configure nome e foto de perfil, troque 2 ou 3 mensagens manuais e aguarde 15 a 30 minutos antes de escanear o QR Code da API de mensageria.
+          </p>
+        </div>
+
+        <div class="check-card">
+          <span class="status-pill pill-info"><span class="status-dot"></span>Automação Semanal</span>
+          <h3>Heartbeat Programado no Cron</h3>
+          <p>
+            Agende <code class="inline-code">./wa-farm.sh heartbeat</code> uma vez por semana no <code class="inline-code">crontab</code>. Cada celular virtual sincronizará com a Meta por 60 segundos em background sem consumir RAM no dia a dia.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rodapé Institucional Oficial KeyCore (#0E002A) -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div style="max-width: 520px;">
+          <img src="assets/logo-keycore-dark-crop.png" alt="KeyCore Tech Hub" class="brand-logo-dark" style="margin-bottom: 16px;" />
+          <p style="font-size: 0.9rem; color: var(--keycore-ice); opacity: 0.9;">
+            A KeyCore é uma parceira de transformação operacional que combina estratégia, engenharia humana, agentes de IA e software sob medida para ajudar empresas brasileiras a crescer com mais clareza, eficiência e capacidade de execução.
+          </p>
+          <div class="double-bar" style="margin: 18px 0 0;">
+            <span class="seg-magenta"></span>
+            <span class="seg-cyan"></span>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:48px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--keycore-cyan);margin-bottom:12px;">Projeto Open Source</div>
+            <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;font-size:0.88rem;">
+              <li><a href="https://github.com/rogerin/wa-farm" target="_blank" rel="noopener" style="color:var(--keycore-white);text-decoration:none;">Repositório GitHub (rogerin/wa-farm)</a></li>
+              <li><a href="https://github.com/rogerin/wa-farm/releases" target="_blank" rel="noopener" style="color:var(--keycore-white);text-decoration:none;">Releases &amp; Changelog (v1.0.0)</a></li>
+              <li><a href="https://github.com/rogerin/wa-farm/blob/main/LICENSE" target="_blank" rel="noopener" style="color:var(--keycore-white);text-decoration:none;">Licença MIT</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--keycore-cyan);margin-bottom:12px;">KeyCore Tech Hub</div>
+            <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;font-size:0.88rem;">
+              <li><a href="https://keycore.com.br" target="_blank" rel="noopener" style="color:var(--keycore-white);text-decoration:none;">keycore.com.br</a></li>
+              <li><a href="https://github.com/rogerin" target="_blank" rel="noopener" style="color:var(--keycore-white);text-decoration:none;">Rogério Alencar Filho (@rogerin)</a></li>
+              <li style="color:var(--keycore-ice);opacity:0.8;">Recife/PE — Bairro do Recife</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>KEYCORE TECH HUB • CNPJ 42.231.277/0001-75</span>
+        <span>TECNOLOGIA QUE DEVOLVE TEMPO • 2026</span>
+        <span>WA-FARM OPEN SOURCE (MIT)</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const termSnippets = {
+      bootstrap: `<span class="cmd-comment"># Cria AVD ultra-leve, inicia emulador, aplica debloat e abre o WhatsApp:</span>
+<span class="cmd-prompt">$</span> ./wa-farm.sh bootstrap 1
+
+[wa-farm] Verificando SDK Android (arm64-v8a)...
+[wa-farm] Criando celular virtual wa_01 (Conta #1 | Porta 5554 | RAM: 896 MB)...
+<span class="cmd-ok">[OK] AVD wa_01 configurado (360x640@160dpi, 896MB RAM, sem Play Store).</span>
+[wa-farm] Aplicando otimizações internas de economia de RAM via ADB...
+[wa-farm] Instalando WhatsApp.apk oficial direto da CDN da Meta...
+<span class="cmd-ok">[OK] WhatsApp instalado e aberto em wa_01 (emulator-5554)!</span>`,
+      status: `<span class="cmd-comment"># Audita status e consumo real de memória RAM (MB) das 7 contas:</span>
+<span class="cmd-prompt">$</span> ./wa-farm.sh status
+
+CONTA    | AVD        | SERIAL ADB      | CRIADO?    | STATUS   | RAM (MB)    
+---------+------------+-----------------+------------+----------+-------------
+Conta #1 | wa_01      | emulator-5554   | SIM        | RODANDO  | 842 MB      
+Conta #2 | wa_02      | emulator-5556   | SIM        | PARADO   | 0 MB        
+Conta #3 | wa_03      | emulator-5558   | SIM        | PARADO   | 0 MB        
+Conta #4 | wa_04      | emulator-5560   | SIM        | PARADO   | 0 MB        
+Conta #5 | wa_05      | emulator-5562   | SIM        | PARADO   | 0 MB        
+Conta #6 | wa_06      | emulator-5564   | SIM        | PARADO   | 0 MB        
+Conta #7 | wa_07      | emulator-5566   | SIM        | PARADO   | 0 MB        
+---------+------------+-----------------+------------+----------+-------------
+<span class="cmd-ok">Total em execução: 1/7 emuladores | Consumo total de RAM: 842 MB</span>`,
+      qr: `<span class="cmd-comment"># Opção 1: Injetar imagem PNG do QR Code na câmera virtual:</span>
+<span class="cmd-prompt">$</span> ./wa-farm.sh qr 1 ~/Desktop/qrcode.png
+<span class="cmd-ok">[OK] QR Code injetado na câmera virtual de wa_01 (Toren1BD.posters)!</span>
+
+<span class="cmd-comment"># Opção 2: Parear via Código de 8 dígitos (Zero câmera):</span>
+<span class="cmd-prompt">$</span> ./wa-farm.sh pair 1 ABCD1234
+<span class="cmd-ok">[OK] Código enviado para a tela do WhatsApp!</span>`,
+      heartbeat: `<span class="cmd-comment"># Renova sessão de 14 dias das 7 contas (1 por vez em modo headless):</span>
+<span class="cmd-prompt">$</span> ./wa-farm.sh heartbeat
+
+[wa-farm] Iniciando ciclo de Heartbeat Headless nas 7 contas...
+[wa-farm] Iniciando wa_01 em emulator-5554 (RAM máx: 896 MB | GPU: off)...
+[wa-farm] Abrindo WhatsApp em wa_01 por 60s para sincronizar sessão...
+<span class="cmd-ok">[OK] wa_01 desligado. Avançando para wa_02...</span>`
+    };
+
+    function switchTerm(key, btn) {
+      document.querySelectorAll('.term-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('hero-terminal-content').innerHTML = termSnippets[key];
+    }
+
+    function switchPairTab(panelId, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(panelId).classList.add('active');
+    }
+
+    function formatBR(num) {
+      return num.toFixed(2).replace('.', ',');
+    }
+
+    function updateCalculator() {
+      const count = parseInt(document.getElementById('account-slider').value, 10);
+      document.getElementById('account-count-label').textContent = count === 1 ? '1 conta' : count + ' contas';
+
+      const selectedMode = document.querySelector('input[name="wa-mode"]:checked').value;
+      document.querySelectorAll('.mode-option').forEach(el => el.classList.remove('selected'));
+      document.getElementById('opt-' + selectedMode).classList.add('selected');
+
+      const stdRamGB = count * 3.9;
+      let waRamGB = 0.85;
+      let subtext = '1 instância ativa por vez (~850 MB)';
+
+      if (selectedMode === 'heartbeat') {
+        waRamGB = 0.85;
+        subtext = '1 instância ativa por vez (~850 MB) • Sessão ativa 14 dias';
+      } else if (selectedMode === 'headless') {
+        waRamGB = count * 0.78;
+        subtext = count + ' instâncias headless simultâneas (~780 MB cada)';
+      } else {
+        waRamGB = count * 0.88;
+        subtext = count + ' janelas 360x640 simultâneas (~880 MB cada)';
+      }
+
+      document.getElementById('std-ram-text').textContent = formatBR(stdRamGB) + ' GB RAM';
+      document.getElementById('wa-ram-text').textContent = formatBR(waRamGB) + ' GB RAM';
+      document.getElementById('wa-subtext').textContent = subtext;
+
+      const maxScale = Math.max(stdRamGB, 32);
+      document.getElementById('std-bar').style.width = Math.min(100, Math.round((stdRamGB / maxScale) * 100)) + '%';
+      document.getElementById('wa-bar').style.width = Math.max(4, Math.min(100, Math.round((waRamGB / maxScale) * 100))) + '%';
+
+      const stdPill = document.getElementById('std-pill');
+      if (stdRamGB > 14) {
+        stdPill.className = 'status-pill pill-error';
+        stdPill.innerHTML = '<span class="status-dot"></span>Crítico • Excede máquinas de 16 GB / 18 GB';
+      } else {
+        stdPill.className = 'status-pill pill-warn';
+        stdPill.innerHTML = '<span class="status-dot"></span>Atenção • Consumo elevado';
+      }
+
+      const waPill = document.getElementById('wa-pill');
+      if (waRamGB <= 10) {
+        waPill.className = 'status-pill pill-success';
+        waPill.innerHTML = '<span class="status-dot"></span>Ativo • Roda com folga em 8 GB / 16 GB';
+      } else {
+        waPill.className = 'status-pill pill-info';
+        waPill.innerHTML = '<span class="status-dot"></span>Em execução • Recomendado 16 GB+ ou Modo Heartbeat';
+      }
+    }
+
+    function copyPrompt(btn) {
+      const raw = document.getElementById('context-prompt-text').innerText;
+      navigator.clipboard.writeText(raw).then(() => {
+        const old = btn.textContent;
+        btn.textContent = '✓ Prompt Copiado!';
+        setTimeout(() => { btn.textContent = old; }, 2200);
+      });
+    }
+
+    function copyText(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const old = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => { btn.textContent = old; }, 1800);
+      });
+    }
+  </script>
+</body>
+</html>

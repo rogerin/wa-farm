@@ -3,12 +3,12 @@
 .env.*
 !.env.example
 
-# APKs baixados e imagens temporárias de QR Code
+# APKs baixados e imagens temporárias de QR Code na raiz
 apk/*.apk
 *.apk
-*.png
-*.jpg
-*.jpeg
+*qrcode*.png
+*qr*.png
+!docs/assets/*.png
 
 # Logs e arquivos de sistema
 *.log

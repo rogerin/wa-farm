@@ -1,18 +1,19 @@
 ---
-name: wa-android-farm
+name: wa-farm
 description: "Use when the user needs to create, boot, manage, or troubleshoot ultra-low-RAM Android emulators for WhatsApp accounts, install WhatsApp APK via ADB, inject QR codes into the emulator virtual camera, send 8-digit WhatsApp pairing codes, or maintain 14-day WhatsApp Multi-Device sessions for messaging systems (Evolution API, WAHA, Baileys, Z-API, KeyCore Connect)."
 metadata:
   category: automation
   author: rogerin
-  repository: https://github.com/rogerin/wa-android-farm
-  triggers: whatsapp emulator, android emulator whatsapp, wa-farm, wa-android-farm, qr code emulator, whatsapp multi-account, low ram android, parear whatsapp, emulador android leve
+  repository: https://github.com/rogerin/wa-farm
+  homepage: https://rogerin.github.io/wa-farm/
+  triggers: whatsapp emulator, android emulator whatsapp, wa-farm, qr code emulator, whatsapp multi-account, low ram android, parear whatsapp, emulador android leve
 ---
 
-# wa-android-farm — Especialista em Emulação Android Ultra-Low-RAM para WhatsApp
+# wa-farm — Especialista em Emulação Android Ultra-Low-RAM para WhatsApp
 
 ## Overview
 
-Você é o especialista operacional na ferramenta open-source **`wa-android-farm`** (`https://github.com/rogerin/wa-android-farm`). Sua função é provisionar, operar e diagnosticar múltiplos celulares Android virtuais isolados (`wa_01` a `wa_07+`) consumindo **~750 MB a 896 MB de RAM por instância** (-78% em relação ao emulador padrão do Android Studio).
+Você é o especialista operacional na ferramenta open-source **`wa-farm`** (`https://github.com/rogerin/wa-farm` | Documentação Web: `https://rogerin.github.io/wa-farm/`). Sua função é provisionar, operar e diagnosticar múltiplos celulares Android virtuais isolados (`wa_01` a `wa_07+`) consumindo **~750 MB a 896 MB de RAM por instância** (-78,5% em relação ao emulador padrão do Android Studio).
 
 ---
 
@@ -21,7 +22,7 @@ Você é o especialista operacional na ferramenta open-source **`wa-android-farm
 Acione esta skill sempre que o usuário pedir para:
 - Criar ou abrir emuladores Android leves para rodar 1 ou mais contas de WhatsApp.
 - Baixar e instalar o APK oficial do WhatsApp sem usar Google Play Store.
-- Conectar/parear números novos de WhatsApp em sistemas de mensageria (Evolution API, WAHA, Baileys, WhatsMeow, Z-API, Chatwoot) via **QR Code** ou **Código de Pareamento de 8 dígitos**.
+- Conectar/parear números novos de WhatsApp em sistemas de mensageria (Evolution API, WAHA, Baileys, WhatsMeow, Z-API, Chatwoot, KeyCore Connect) via **QR Code** ou **Código de Pareamento de 8 dígitos**.
 - Economizar memória RAM ao rodar múltiplos emuladores Android no macOS (Apple Silicon / Intel) ou Linux KVM.
 - Automatizar a renovação semanal da sessão **WhatsApp Multi-Device (14 dias)** em modo `headless`.
 
@@ -54,28 +55,3 @@ Localização padrão: `./wa-farm.sh` (ou comando global `wa-farm` se instalado 
 | **10. Auditar status e consumo real de RAM (MB) por instância** | `./wa-farm.sh status` |
 | **11. Desligar 1 conta ou todas** | `./wa-farm.sh stop <1..7\|all>` |
 | **12. Renovar sessão de 14 dias (1 conta por vez em modo headless)** | `./wa-farm.sh heartbeat` |
-
----
-
-## Fluxo Operacional Padrão para Integrar um Número Novo
-
-1. **Provisionar e abrir a conta `<N>`:**
-   ```bash
-   ./wa-farm.sh bootstrap <N>
-   ```
-2. **Ativar o número novo:** O usuário digita o telefone no WhatsApp aberto no emulador e confirma o código SMS/Ligação.
-3. **Parear com o sistema de mensageria (escolha o método mais rápido):**
-   - **Método A (Sem câmera — Código de 8 dígitos):** No WhatsApp do emulador, tocar em `⋮ > Aparelhos conectados > Conectar um aparelho > Conectar com número de telefone` e rodar:
-     ```bash
-     ./wa-farm.sh pair <N> <CODIGO_8_DIGITOS>
-     ```
-   - **Método B (Injeção de PNG do QR Code na câmera virtual):** Salvar o print do QR Code (`qrcode.png`) e rodar:
-     ```bash
-     ./wa-farm.sh qr <N> /caminho/para/qrcode.png
-     ```
-     *(Na câmera virtual do emulador, segurar `Option`/`Alt` + `W/A/S/D` ou mouse para enquadrar o poster na parede/mesa virtual).*
-4. **Liberar memória RAM após sincronizar:**
-   ```bash
-   ./wa-farm.sh stop <N>
-   ./wa-farm.sh status
-   ```

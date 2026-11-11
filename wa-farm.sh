@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# wa-android-farm (wa-farm.sh) — v1.0.0
+# wa-farm (wa-farm.sh) — v1.0.0
 # Ultra-Low-RAM Android Emulator Farm for Multi-Account WhatsApp Integration
 # Author: Rogério Alencar Filho (@rogerin) — KeyCore Open Source
 # License: MIT
@@ -561,7 +561,7 @@ cmd_heartbeat() {
 # ------------------------------------------------------------------------------
 cmd_help() {
   cat <<EOF
-wa-android-farm v${VERSION} — Ultra-Low-RAM Android Emulator Farm for WhatsApp
+wa-farm v${VERSION} — Ultra-Low-RAM Android Emulator Farm for WhatsApp
 
 Uso: ./wa-farm.sh <comando> [argumentos]
 
@@ -595,7 +595,7 @@ case "$ACTION" in
   status)         cmd_status "$@" ;;
   stop)           cmd_stop "$@" ;;
   heartbeat)      cmd_heartbeat "$@" ;;
-  --version|-v)   echo "wa-android-farm v${VERSION}" ;;
+  --version|-v)   echo "wa-farm v${VERSION}" ;;
   --help|-h|help) cmd_help ;;
   *)              cmd_help ;;
 esac

@@ -1,7 +1,8 @@
 {
-  "name": "wa-android-farm",
+  "name": "wa-farm",
   "version": "1.0.0",
   "description": "Ultra-Low-RAM Android Emulator Farm for Multi-Account WhatsApp Integration (~850 MB RAM per instance)",
+  "homepage": "https://rogerin.github.io/wa-farm/",
   "scripts": {
     "wa": "bash ./wa-farm.sh",
     "wa:setup": "bash ./wa-farm.sh setup",
@@ -13,10 +14,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rogerin/wa-android-farm.git"
+    "url": "git+https://github.com/rogerin/wa-farm.git"
   },
   "keywords": [
     "whatsapp",
+    "wa-farm",
     "android-emulator",
     "low-memory",
     "adb",

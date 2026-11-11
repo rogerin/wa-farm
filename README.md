@@ -1,9 +1,12 @@
-# 📱 wa-android-farm
+# 📱 wa-farm
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-00DEFE.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-macOS%20(Apple%20Silicon%20%2F%20Intel)%20%7C%20Linux%20KVM-0E002A)](https://github.com/rogerin/wa-android-farm)
-[![RAM Footprint](https://img.shields.io/badge/RAM%20per%20Instance-~850%20MB%20(-78%25)-10B981)](https://github.com/rogerin/wa-android-farm)
+[![GitHub Pages](https://img.shields.io/badge/Docs%20%26%20RAM%20Calculator-rogerin.github.io%2Fwa--farm-FE00CD)](https://rogerin.github.io/wa-farm/)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20(Apple%20Silicon%20%2F%20Intel)%20%7C%20Linux%20KVM-0E002A)](https://github.com/rogerin/wa-farm)
+[![RAM Footprint](https://img.shields.io/badge/RAM%20per%20Instance-~850%20MB%20(-78%25)-10B981)](https://github.com/rogerin/wa-farm)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-FE00CD.svg)](CONTRIBUTING.md)
+
+> 🌐 **Página Oficial & Calculadora Interativa de RAM:** **[https://rogerin.github.io/wa-farm/](https://rogerin.github.io/wa-farm/)**
 
 **Orquestrador CLI ultra-leve para criar, emular e manter múltiplas contas de WhatsApp em emuladores Android isolados (`wa_01` a `wa_07+`) consumindo até 78% menos memória RAM.**
 
@@ -15,9 +18,9 @@ Projetado para desenvolvedores, equipes de operação e integradores de sistemas
 
 Um emulador Android padrão criado no Android Studio (com Google Play Store, tela Full HD `1080x2400`, áudio e snapshots) consome entre **3,5 GB e 4,2 GB de RAM por instância**. Subir **7 contas de WhatsApp** exigiria **~28 GB de RAM**, inviabilizando notebooks de 16 GB/18 GB ou servidores VPS enxutos.
 
-O **`wa-android-farm`** aplica **7 otimizações de baixo nível** no Android SDK/QEMU + ADB, reduzindo cada celular virtual para **~750 MB a 896 MB de RAM**:
+O **`wa-farm`** aplica **7 otimizações de baixo nível** no Android SDK/QEMU + ADB, reduzindo cada celular virtual para **~750 MB a 896 MB de RAM**:
 
-| Camada | Emulador Padrão (Android Studio) | `wa-android-farm` (Perfil Ultra-Low-RAM) | Economia Real |
+| Camada | Emulador Padrão (Android Studio) | `wa-farm` (Perfil Ultra-Low-RAM) | Economia Real |
 | :--- | :--- | :--- | :--- |
 | **1. Imagem de Sistema** | `google_apis_playstore` (com Play Services) | **AOSP Puro (`android-31;default;arm64-v8a` / `x86_64`)** | **-600 MB RAM** (elimina `com.google.android.gms`) |
 | **2. Instalação do WhatsApp** | Login manual na Google Play Store | **Download direto do APK Oficial da Meta via CDN** | Zero conta Google necessária |
@@ -49,7 +52,7 @@ flowchart LR
 
 No protocolo **WhatsApp Multi-Device (Aparelhos Conectados)**, após escanear o QR Code ou digitar o código de pareamento de 8 dígitos, **o seu sistema de mensageria mantém a conexão ativa de forma independente por até 14 dias com o celular desligado**.
 
-Por isso, o `wa-android-farm` suporta **dois modos de operação**:
+Por isso, o `wa-farm` suporta **dois modos de operação**:
 
 1. **Modo On-Demand + Heartbeat Semanal (Recomendado — ~850 MB de RAM total):**
    - Você sobe **1 emulador por vez** (`./wa-farm.sh bootstrap 1`) para ativar o chip e escanear o QR Code, e desliga em seguida (`./wa-farm.sh stop 1`).
@@ -82,13 +85,13 @@ sudo usermod -aG kvm "$USER"
 
 ### 🤖 Opção A — Instalação Automática via Agente de IA (Prompt com Engenharia de Contexto + Skill)
 
-Se você usa **Claude Code**, **Gemini CLI / Antigravity**, **OpenAI Codex CLI** ou **Cursor**, basta copiar e colar o prompt estruturado abaixo (também disponível em [`PROMPT_INSTALACAO_E_SKILL_WA-ANDROID-FARM.md`](PROMPT_INSTALACAO_E_SKILL_WA-ANDROID-FARM.md)). O seu agente instalará a ferramenta e registrará automaticamente a **Skill Especialista (`wa-android-farm`)** para operar seus emuladores por comando de voz ou texto:
+Se você usa **Claude Code**, **Gemini CLI / Antigravity**, **OpenAI Codex CLI** ou **Cursor**, basta copiar e colar o prompt estruturado abaixo (também disponível em [`PROMPT_INSTALACAO_E_SKILL_WA-ANDROID-FARM.md`](PROMPT_INSTALACAO_E_SKILL_WA-ANDROID-FARM.md)). O seu agente instalará a ferramenta e registrará automaticamente a **Skill Especialista (`wa-farm`)** para operar seus emuladores por comando de voz ou texto:
 
 ```xml
-<context_engineering_prompt version="1.0.0" project="wa-android-farm">
+<context_engineering_prompt version="1.0.0" project="wa-farm">
   <role>
     Você é um Engenheiro DevOps Sênior especialista em Automação Android (SDK/ADB/QEMU) e Engenharia de Agentes de IA.
-    Sua missão é instalar, configurar e validar a ferramenta open-source `wa-android-farm` (https://github.com/rogerin/wa-android-farm) na máquina local e instalar a Skill especialista `wa-android-farm` para operar emuladores Android Ultra-Low-RAM (~850 MB por instância) para múltiplas contas de WhatsApp.
+    Sua missão é instalar, configurar e validar a ferramenta open-source `wa-farm` (https://github.com/rogerin/wa-farm) na máquina local e instalar a Skill especialista `wa-farm` para operar emuladores Android Ultra-Low-RAM (~850 MB por instância) para múltiplas contas de WhatsApp.
   </role>
   <strict_constraints>
     1. NUNCA instale imagens pesadas com Google Play Store (`google_apis_playstore`). Use exclusivamente o fluxo oficial do `./wa-farm.sh` (`default;arm64-v8a` ou `default;x86_64`).
@@ -96,8 +99,8 @@ Se você usa **Claude Code**, **Gemini CLI / Antigravity**, **OpenAI Codex CLI**
   </strict_constraints>
   <execution_pipeline>
     1. Verifique `git`, `curl`, `adb`, `sdkmanager` e `avdmanager` (no macOS, se faltar, instale via `brew install --cask temurin android-commandlinetools android-platform-tools`).
-    2. Clone o repositório em `~/wa-android-farm`:
-       `git clone https://github.com/rogerin/wa-android-farm.git ~/wa-android-farm && cd ~/wa-android-farm && chmod +x wa-farm.sh install-skill.sh`
+    2. Clone o repositório em `~/wa-farm`:
+       `git clone https://github.com/rogerin/wa-farm.git ~/wa-farm && cd ~/wa-farm && chmod +x wa-farm.sh install-skill.sh`
     3. Instale a Skill Especialista e o atalho global:
        `./install-skill.sh`
     4. Valide executando `./wa-farm.sh --version` e `./wa-farm.sh status`, exiba a tabela e pergunte se desejo iniciar a Conta #1 agora com `./wa-farm.sh bootstrap 1`.
@@ -111,8 +114,8 @@ Se você usa **Claude Code**, **Gemini CLI / Antigravity**, **OpenAI Codex CLI**
 
 ### 1. Clone o repositório e instale a Skill
 ```bash
-git clone https://github.com/rogerin/wa-android-farm.git
-cd wa-android-farm
+git clone https://github.com/rogerin/wa-farm.git
+cd wa-farm
 chmod +x wa-farm.sh install-skill.sh
 ./install-skill.sh
 ```
@@ -261,7 +264,7 @@ crontab -e
 ```
 Adicione a linha abaixo:
 ```cron
-0 4 * * 1 /caminho/absoluto/para/wa-android-farm/wa-farm.sh heartbeat >> /tmp/wa-farm-heartbeat.log 2>&1
+0 4 * * 1 /caminho/absoluto/para/wa-farm/wa-farm.sh heartbeat >> /tmp/wa-farm-heartbeat.log 2>&1
 ```
 
 ---
@@ -293,7 +296,7 @@ O **primeiro boot** de cada AVD (`wa_01`..`wa_07`) leva cerca de 35 a 60 segundo
 
 ## 🌍 English Summary
 
-**`wa-android-farm`** is an ultra-low-memory Android Emulator orchestrator built in pure Bash to create, boot, debloat, and manage multiple isolated WhatsApp accounts (`wa_01` to `wa_07+`) using **~850 MB RAM per instance** (a **78% reduction** compared to standard 4 GB Android Studio emulators).
+**`wa-farm`** is an ultra-low-memory Android Emulator orchestrator built in pure Bash to create, boot, debloat, and manage multiple isolated WhatsApp accounts (`wa_01` to `wa_07+`) using **~850 MB RAM per instance** (a **78% reduction** compared to standard 4 GB Android Studio emulators).
 
 - **Pure AOSP ARM64/x86_64 (`android-31`):** No Google Play Services bloat.
 - **Direct Official APK:** Automatically downloads `WhatsApp.apk` from Meta's official CDN and installs via `adb`.
