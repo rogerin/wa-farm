@@ -32,16 +32,16 @@ Com a engenharia de enxugamento aplicada no [`wa-farm.sh`](file:///Users/rogerio
 
 ```mermaid
 flowchart LR
-    subgraph Host["Mac Apple Silicon (HVF ARM64) — wa-farm.sh"]
-        AVD1["wa_01 (Porta 5554)\nRAM: 896 MB | 360x640"]
-        AVD2["wa_02 (Porta 5556)\nRAM: 896 MB | 360x640"]
+    subgraph Host["Mac Apple Silicon HVF ARM64 - wa-farm.sh"]
+        AVD1["wa_01 - Porta 5554 - RAM 896 MB"]
+        AVD2["wa_02 - Porta 5556 - RAM 896 MB"]
         AVDDots["... wa_03 a wa_06 ..."]
-        AVD7["wa_07 (Porta 5566)\nRAM: 896 MB | 360x640"]
+        AVD7["wa_07 - Porta 5566 - RAM 896 MB"]
     end
 
-    CDN["CDN Oficial WhatsApp\nWhatsApp.apk"] -->|adb install| Host
-    MSG["Sistema de Mensageria\n(QR Code PNG ou Código 8 dígitos)"] -->|wa-farm qr / wa-farm pair| Host
-    Host -->|Sessão Multi-Device Ativa\n(14 dias independente)| META["Servidores WhatsApp / Meta"]
+    CDN["CDN Oficial WhatsApp - WhatsApp.apk"] -->|"adb install -r"| Host
+    MSG["Sistema de Mensageria - QR Code PNG ou Codigo 8 digitos"] -->|"wa-farm qr / wa-farm pair"| Host
+    Host -->|"Sessao Multi-Device Ativa por 14 dias"| META["Servidores WhatsApp / Meta"]
 ```
 
 ### Estratégia Inteligente de Uso de RAM (2 Modos no mesmo Script)

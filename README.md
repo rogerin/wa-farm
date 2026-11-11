@@ -33,16 +33,16 @@ O **`wa-android-farm`** aplica **7 otimizações de baixo nível** no Android SD
 
 ```mermaid
 flowchart LR
-    subgraph Host["Host (macOS Apple Silicon HVF / Linux KVM) — wa-farm.sh"]
-        AVD1["📱 wa_01 (Porta 5554)\nRAM: 896 MB | 360x640"]
-        AVD2["📱 wa_02 (Porta 5556)\nRAM: 896 MB | 360x640"]
+    subgraph Host["Host macOS Apple Silicon / Linux KVM - wa-farm.sh"]
+        AVD1["wa_01 - Porta 5554 - RAM 896 MB"]
+        AVD2["wa_02 - Porta 5556 - RAM 896 MB"]
         AVDDots["... wa_03 a wa_06 ..."]
-        AVD7["📱 wa_07 (Porta 5566)\nRAM: 896 MB | 360x640"]
+        AVD7["wa_07 - Porta 5566 - RAM 896 MB"]
     end
 
-    CDN["CDN Oficial WhatsApp\nwhatsapp.com/android/current/WhatsApp.apk"] -->|adb install -r| Host
-    MSG["Sistema de Mensageria\n(Evolution API / Baileys / WAHA)"] -->|QR Code PNG ou Código 8 dígitos| Host
-    Host -->|Sessão Multi-Device Ativa\n(14 dias independente)| META["Servidores WhatsApp / Meta"]
+    CDN["CDN Oficial WhatsApp - WhatsApp.apk"] -->|"adb install -r"| Host
+    MSG["Sistema de Mensageria - Evolution API / Baileys / WAHA"] -->|"QR Code PNG ou Codigo 8 digitos"| Host
+    Host -->|"Sessao Multi-Device Ativa por 14 dias"| META["Servidores WhatsApp / Meta"]
 ```
 
 ### Ciclo de Vida Inteligente de Memória (Como operar 7 contas gastando < 1 GB de RAM)
@@ -120,22 +120,22 @@ Depois de ativar o seu número novo no WhatsApp (via SMS ou ligação), toque em
 sequenceDiagram
     participant Dev as Operador / CLI
     participant Msg as Sistema de Mensageria
-    participant Emu as Emulador (wa_01..wa_07)
+    participant Emu as Emulador wa_01..wa_07
     participant WA as App WhatsApp
 
-    alt Método A: Código de 8 Dígitos (Zero Câmera — Mais Rápido)
-        Msg->>Dev: Gera Pairing Code (ex: ABCD-1234)
-        WA->>WA: Toca em "Conectar com número de telefone"
+    alt Metodo A: Codigo de 8 Digitos - Zero Camera
+        Msg->>Dev: Gera Pairing Code ABCD-1234
+        WA->>WA: Toca em Conectar com numero de telefone
         Dev->>Emu: ./wa-farm.sh pair 1 ABCD1234
-        Emu->>WA: Digita código via ADB input text
-    else Método B: Injeção de Imagem PNG do QR Code na Câmera Virtual
-        Msg->>Dev: Salva print do QR Code (qrcode.png)
+        Emu->>WA: Digita codigo via ADB input text
+    else Metodo B: Injecao de Imagem PNG do QR Code na Camera Virtual
+        Msg->>Dev: Salva print do QR Code qrcode.png
         Dev->>Emu: ./wa-farm.sh qr 1 ./qrcode.png
-        Emu->>WA: Injeta poster na câmera traseira (virtualscene)
+        Emu->>WA: Injeta poster na camera traseira virtualscene
         WA->>WA: Escaneia QR Code automaticamente
-    else Método C: Webcam Física / OBS Virtual Camera
+    else Metodo C: Webcam Fisica ou OBS Virtual Camera
         Dev->>Emu: ./wa-farm.sh start 1 --webcam
-        WA->>WA: Lê QR Code apontado para a webcam
+        WA->>WA: Le QR Code apontado para a webcam
     end
 ```
 
