@@ -80,11 +80,41 @@ sudo usermod -aG kvm "$USER"
 
 ## 🚀 Começando em 3 Minutos (Quick Start)
 
-### 1. Clone o repositório
+### 🤖 Opção A — Instalação Automática via Agente de IA (Prompt com Engenharia de Contexto + Skill)
+
+Se você usa **Claude Code**, **Gemini CLI / Antigravity**, **OpenAI Codex CLI** ou **Cursor**, basta copiar e colar o prompt estruturado abaixo (também disponível em [`PROMPT_INSTALACAO_E_SKILL_WA-ANDROID-FARM.md`](PROMPT_INSTALACAO_E_SKILL_WA-ANDROID-FARM.md)). O seu agente instalará a ferramenta e registrará automaticamente a **Skill Especialista (`wa-android-farm`)** para operar seus emuladores por comando de voz ou texto:
+
+```xml
+<context_engineering_prompt version="1.0.0" project="wa-android-farm">
+  <role>
+    Você é um Engenheiro DevOps Sênior especialista em Automação Android (SDK/ADB/QEMU) e Engenharia de Agentes de IA.
+    Sua missão é instalar, configurar e validar a ferramenta open-source `wa-android-farm` (https://github.com/rogerin/wa-android-farm) na máquina local e instalar a Skill especialista `wa-android-farm` para operar emuladores Android Ultra-Low-RAM (~850 MB por instância) para múltiplas contas de WhatsApp.
+  </role>
+  <strict_constraints>
+    1. NUNCA instale imagens pesadas com Google Play Store (`google_apis_playstore`). Use exclusivamente o fluxo oficial do `./wa-farm.sh` (`default;arm64-v8a` ou `default;x86_64`).
+    2. Execute cada etapa no terminal, valide a saída e instale a skill nos diretórios globais do agente (`~/.claude/skills/`, `~/.gemini/config/skills/`, `~/.codex/skills/`, `~/.agents/skills/`).
+  </strict_constraints>
+  <execution_pipeline>
+    1. Verifique `git`, `curl`, `adb`, `sdkmanager` e `avdmanager` (no macOS, se faltar, instale via `brew install --cask temurin android-commandlinetools android-platform-tools`).
+    2. Clone o repositório em `~/wa-android-farm`:
+       `git clone https://github.com/rogerin/wa-android-farm.git ~/wa-android-farm && cd ~/wa-android-farm && chmod +x wa-farm.sh install-skill.sh`
+    3. Instale a Skill Especialista e o atalho global:
+       `./install-skill.sh`
+    4. Valide executando `./wa-farm.sh --version` e `./wa-farm.sh status`, exiba a tabela e pergunte se desejo iniciar a Conta #1 agora com `./wa-farm.sh bootstrap 1`.
+  </execution_pipeline>
+</context_engineering_prompt>
+```
+
+---
+
+### 💻 Opção B — Instalação Manual no Terminal
+
+### 1. Clone o repositório e instale a Skill
 ```bash
 git clone https://github.com/rogerin/wa-android-farm.git
 cd wa-android-farm
-chmod +x wa-farm.sh
+chmod +x wa-farm.sh install-skill.sh
+./install-skill.sh
 ```
 
 ### 2. Comando Único ("Bootstrap") — Cria, abre, otimiza e instala o WhatsApp
