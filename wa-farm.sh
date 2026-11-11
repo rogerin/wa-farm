@@ -285,9 +285,10 @@ start_single_avd() {
     -netdelay none \
     -netspeed full \
     ${headless_flags[@]+"${headless_flags[@]}"} \
-    >"$log_file" 2>&1 &
+    </dev/null >"$log_file" 2>&1 &
 
   local emu_pid=$!
+  disown "$emu_pid" 2>/dev/null || true
   log_ok "${name} iniciado em background (PID: ${emu_pid} | Log: ${log_file})."
 }
 
@@ -310,10 +311,14 @@ cmd_start() {
 wait_for_boot() {
   local serial="$1"
   log_info "Aguardando Android iniciar completamente em ${serial}..."
-  "$ADB_BIN" -s "$serial" wait-for-device
   local boot_completed=""
   local attempts=0
   while [[ "$boot_completed" != "1" ]]; do
+    if grep -q "FATAL" /tmp/wa_*_emulator.log 2>/dev/null; then
+      log_err "Falha fatal detectada no log do emulador:"
+      grep "FATAL" /tmp/wa_*_emulator.log >&2 || true
+      return 1
+    fi
     boot_completed="$("$ADB_BIN" -s "$serial" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
     if [[ "$boot_completed" == "1" ]]; then
       break
